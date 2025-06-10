@@ -1,0 +1,38 @@
+version: "3"
+services:
+  db:
+    # image: postgres
+    image: ankane/pgvector
+    restart: always
+    # set shared memory limit when using docker compose
+    shm_size: 128mb
+    ports:
+      - 5432:5432
+    networks:
+      - tota
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tota_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    restart: on-failure
+    ports:
+      - 6379:6379
+    networks:
+      - tota
+
+  mail:
+    container_name: inbucket
+    image: inbucket/inbucket:latest
+    ports:
+      - "2500:2500"
+      - "9000:9000"
+
+volumes:
+  pgdata:
+networks:
+  tota:

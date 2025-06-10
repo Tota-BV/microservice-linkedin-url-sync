@@ -1,24 +1,24 @@
 import {
-  AudioWaveform,
-  Command,
-  File,
-  GalleryVerticalEnd,
-  Home,
-  MessageCircle,
-  Settings2,
+  BookOpenTextIcon,
+  CalendarCheckIcon,
+  CogIcon,
+  FileIcon,
+  LayoutDashboardIcon,
+  MessageCircleIcon,
+  MessageCircleMoreIcon,
+  ShieldCheckIcon,
+  UserRoundCheckIcon,
 } from "lucide-react";
-import * as React from "react";
+import type * as React from "react";
 
-import { NavItems } from "@/components/nav-items";
-
-import { NavUser } from "@/components/nav-user";
-import { OrganizationSwitcher } from "@/components/organization-switcher";
+import { NavMain } from "@/components/nav-main";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 // This is sample data.
@@ -28,61 +28,90 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  organizations: [
+  navMain: [
     {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      title: "Candidate Verification",
+      url: "#",
+      icon: ShieldCheckIcon,
     },
     {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
+      title: "Candidates",
+      url: "#",
+      icon: UserRoundCheckIcon,
     },
     {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
+      title: "Schedule check & Matches",
+      url: "#",
+      icon: CalendarCheckIcon,
     },
-  ],
-  items: [
     {
-      name: "Overview",
-      url: "/dashboard",
-      icon: Home,
+      title: "Chats",
+      url: "#",
+      icon: MessageCircleMoreIcon,
+    },
+    {
+      title: "Knowledge bank",
+      url: "#",
+      icon: BookOpenTextIcon,
+    },
+    {
+      title: "Invoices",
+      url: "#",
+      icon: CogIcon,
     },
 
     {
-      name: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings2,
+      title: "Settings",
+      url: "#",
+      icon: CogIcon,
+    },
+
+    {
+      title: "Profile",
+      url: "#",
+      icon: CogIcon,
     },
     {
-      name: "Chat",
-      url: "/dashboard/chat",
-      icon: MessageCircle,
-    },
-    {
-      name: "RAG",
-      url: "/dashboard/chat/rag",
-      icon: File,
+      title: "Compliance",
+      url: "#",
+      icon: CogIcon,
     },
   ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { open } = useSidebar();
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <OrganizationSwitcher organizations={data.organizations} />
+        <div
+          className={`flex grow items-center ${open ? "px-5" : "justify-center"}`}
+        >
+          {open ? (
+            <img
+              alt="logo"
+              src="/tota-logo-light.svg"
+              className="h-auto w-24"
+            />
+          ) : (
+            <img
+              alt="logo"
+              src="/tota-logo-single.svg"
+              className="h-8 w-auto"
+            />
+          )}
+        </div>
       </SidebarHeader>
-      <SidebarContent>
-        <NavItems items={data.items} label="" />
+      <SidebarContent className="mt-4 px-2">
+        <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <div className="flex items-center justify-center gap-1">
+          <SidebarTrigger className="w-full" />
+        </div>
+        {/* <NavUser user={data.user} /> */}
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

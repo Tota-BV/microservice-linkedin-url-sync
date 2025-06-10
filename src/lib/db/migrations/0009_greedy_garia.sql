@@ -1,0 +1,1 @@
+ALTER TABLE "agencies_profile" ADD COLUMN "about" text DEFAULT '';

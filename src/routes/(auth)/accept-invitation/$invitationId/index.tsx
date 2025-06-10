@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,8 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth/auth-client";
-import { useTranslation } from "@/lib/intl/react";
-import { createFileRoute, useParams, useRouter } from "@tanstack/react-router";
+
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CheckIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { InvitationError } from "../../-components/invitation-error";
@@ -24,7 +22,6 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
   const params = Route.useParams();
   const router = useRouter();
   const [invitationStatus, setInvitationStatus] = useState<
@@ -93,12 +90,12 @@ function RouteComponent() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+      <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
       {invitation ? (
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>{t("ORG_INVITATION")}</CardTitle>
-            <CardDescription>{t("ORG_INVITATION_DESC")}</CardDescription>
+            <CardDescription>ORG_INVITATION_DESC</CardDescription>
           </CardHeader>
           <CardContent>
             {invitationStatus === "pending" && (
@@ -108,8 +105,7 @@ function RouteComponent() {
                   <strong>{invitation?.organizationName}</strong>.
                 </p>
                 <p>
-                  {t("INVITATION_SENT_TO")} <strong>{invitation?.email}</strong>
-                  .
+                  INVITATION_SENT_TO <strong>{invitation?.email}</strong>.
                 </p>
               </div>
             )}
@@ -119,9 +115,9 @@ function RouteComponent() {
                   <CheckIcon className="w-8 h-8 text-green-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-center">
-                  {t("WELCOME_TO")} {invitation?.organizationName}!
+                  WELCOME_TO {invitation?.organizationName}!
                 </h2>
-                <p className="text-center">{t("JOIN_SUCCESS")}</p>
+                <p className="text-center">JOIN_SUCCESS</p>
               </div>
             )}
             {invitationStatus === "rejected" && (
@@ -130,10 +126,10 @@ function RouteComponent() {
                   <XIcon className="w-8 h-8 text-red-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-center">
-                  {t("INVITATION_DECLINED")}
+                  INVITATION_DECLINED
                 </h2>
                 <p className="text-center">
-                  {t("DECLINED_MESSAGE")} {invitation?.organizationName}.
+                  DECLINED_MESSAGE {invitation?.organizationName}.
                 </p>
               </div>
             )}
@@ -143,7 +139,7 @@ function RouteComponent() {
               <Button variant="outline" onClick={handleReject}>
                 {t("DECLINE")}
               </Button>
-              <Button onClick={handleAccept}>{t("ACCEPT_INVITATION")}</Button>
+              <Button onClick={handleAccept}>ACCEPT_INVITATION</Button>
             </CardFooter>
           )}
         </Card>

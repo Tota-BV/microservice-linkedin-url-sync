@@ -1,10 +1,6 @@
 import { db } from "@/lib/db";
 import { todo } from "@/lib/db/schema/todo";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-} from "@/lib/trpc/init";
+import { createTRPCRouter, protectedProcedure } from "@/lib/trpc/init";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
@@ -14,8 +10,8 @@ export const todoRouter = createTRPCRouter({
   }),
   create: protectedProcedure
     .input(z.object({ text: z.string().min(1) }))
-    .mutation(async ({ input }) => {
-      return await db.insert(todo).values({
+    .mutation(({ input }) => {
+      return db.insert(todo).values({
         text: input.text,
       });
     }),

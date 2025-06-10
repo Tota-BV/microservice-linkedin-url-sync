@@ -1,32 +1,38 @@
-import { useTranslation } from "@/lib/intl/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import SignInForm from "./-components/sign-in-form";
 
 export const Route = createFileRoute("/(auth)/login")({
   component: RouteComponent,
-  // loader: async ({ context }) => {
-  //   const todos = await context.queryClient.ensureQueryData(
-  //     context.trpc.public.create.queryOptions(),
-  //   );
-  //   return { todos };
-  // },
 });
+
 function RouteComponent() {
-  // const { todos } = Route.useLoaderData();
-  // console.log({ todos , window});
-  const { t } = useTranslation();
-
-  console.log({ document});
-
   return (
-    <div className="flex min-h-[calc(100vh-10rem)] w-full flex-col items-center justify-center p-2 md:p-6">
-      <SignInForm />
-      <div className="mt-4 text-center">
-        {t("DONT_HAVE_ACCOUNT")}{" "}
-        <Link to="/register" className="underline">
-          {t("REGISTER")}
+    <div>
+      <Card className="min-w-md gap-6">
+        <CardHeader>
+          <CardTitle className="font-display text-2xl">
+            Login to your account
+          </CardTitle>
+          <CardDescription className="text-balance text-muted-foreground text-sm">
+            Enter your email below to login to your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <SignInForm />
+        </CardContent>
+      </Card>
+      <div className="mt-4 text-center text-sm">
+        Don&apos;t have an account?{" "}
+        <Link to="/register" className="underline underline-offset-4">
+          Register
         </Link>
-        !
       </div>
     </div>
   );

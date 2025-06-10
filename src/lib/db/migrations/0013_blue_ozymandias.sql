@@ -1,0 +1,1 @@
+ALTER TABLE "agencies_profile" ALTER COLUMN "usps" SET NOT NULL;

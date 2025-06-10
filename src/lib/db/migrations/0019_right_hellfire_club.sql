@@ -1,0 +1,2 @@
+ALTER TABLE "agency_documents" ADD COLUMN "status" "status" DEFAULT 'Not submitted' NOT NULL;--> statement-breakpoint
+ALTER TABLE "agency_documents" ADD COLUMN "updated_at" timestamp DEFAULT now() NOT NULL;

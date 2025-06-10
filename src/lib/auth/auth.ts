@@ -13,7 +13,14 @@ import { emailOTP } from "better-auth/plugins/email-otp";
 import { passkey } from "better-auth/plugins/passkey";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { reactStartCookies } from "better-auth/react-start";
+import { createClient } from "redis";
 import { env } from "../env.server";
+
+const redis = createClient({
+  url: "redis://localhost:6379",
+  database: 0,
+});
+await redis.connect();
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -22,6 +29,22 @@ export const auth = betterAuth({
   }),
   secret: env.BETTER_AUTH_SECRET,
   basePath: "/api/auth",
+  secondaryStorage: {
+    get: async (key) => {
+      const value = await redis.get(key);
+      return value ? value : null;
+    },
+    set: async (key, value, ttl) => {
+      if (ttl) {
+        await redis.set(key, value, { EX: ttl });
+      } else {
+        await redis.set(key, value);
+      }
+    },
+    delete: async (key) => {
+      await redis.del(key);
+    },
+  },
   rateLimit: {
     enabled: true,
     max: 100,
@@ -36,45 +59,49 @@ export const auth = betterAuth({
     enabled: true,
     level: "info",
   },
-  databaseHooks: {
-    user: {
-      create: {
-        after: async (user) => {
-          await sendEmail({
-            subject: "Welcome to MyApp",
-            template: WelcomeEmail({
-              username: user.name || user.email,
-            }),
-            to: user.email,
-          });
-        },
-      },
-    },
-  },
+  // databaseHooks: {
+  //   user: {
+  //     create: {
+  //       after: async (user) => {
+  //         await sendEmail({
+  //           subject: "Welcome to MyApp",
+  //           template: WelcomeEmail({
+  //             username: user.name || user.email,
+  //           }),
+  //           to: user.email,
+  //         });
+  //       },
+  //     },
+  //   },
+  // },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
-    async sendResetPassword({ url, user }) {
-      await sendEmail({
-        subject: "Reset your password",
-        template: ResetPasswordEmail({
-          resetLink: url,
-          username: user.email,
-        }),
-        to: user.email,
-      });
-    },
+    // async sendResetPassword({ url, user }) {
+    //   await sendEmail({
+    //     subject: "Reset your password",
+    //     template: ResetPasswordEmail({
+    //       resetLink: url,
+    //       username: user.email,
+    //     }),
+    //     to: user.email,
+    //   });
+    // },
   },
   emailVerification: {
+    autoSignInAfterVerification: true,
+    sendOnSignUp: true,
     sendVerificationEmail: async ({ url, user }) => {
-      await sendEmail({
-        subject: "Verify your email",
-        template: VerifyEmail({
-          url: url,
-          username: user.email,
-        }),
-        to: user.email,
-      });
+      console.log("Send email to verify email address");
+      console.log(user, url);
+      // await sendEmail({
+      //   subject: "Verify your email",
+      //   template: VerifyEmail({
+      //     url: url,
+      //     username: user.email,
+      //   }),
+      //   to: user.email,
+      // });
     },
   },
 

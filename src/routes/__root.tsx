@@ -13,11 +13,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { seo } from "@/lib/seo";
 import type { TRPCRouter } from "@/server/router";
 
-import i18n from "@/lib/intl/i18n";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { ThemeProvider } from "next-themes";
 import React from "react";
-import { I18nextProvider } from "react-i18next";
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -56,15 +54,46 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "preload",
+        crossOrigin: "anonymous",
+        as: "font",
+        href: "/fonts/Gilroy-Medium.woff2",
+        type: "font/woff2",
+      },
+      {
+        rel: "preload",
+        crossOrigin: "anonymous",
+        as: "font",
+        href: "/fonts/Gilroy-Bold.woff2",
+        type: "font/woff2",
+      },
+      {
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: "/favicon/apple-touch-icon.png",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        href: "/favicon/favicon-32x32.png",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "16x16",
+        href: "/favicon/favicon-16x16.png",
+      },
+      { rel: "icon", href: "/favicon/favicon.ico" },
+      { rel: "manifest", href: "/site.webmanifest", color: "#fffff" },
     ],
   }),
   component: () => <RootDocument />,
   wrapInSuspense: true,
-  ssr: false,
 });
 
 function RootDocument() {
- 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -73,16 +102,14 @@ function RootDocument() {
       <body suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="light"
           enableSystem
           disableTransitionOnChange
         >
-          <I18nextProvider i18n={i18n} defaultNS={"translation"}>
-            <Outlet />
-            <Toaster />
-            <TanStackRouterDevtools />
-            <Scripts />
-          </I18nextProvider>
+          <Outlet />
+          <Toaster />
+          <TanStackRouterDevtools />
+          <Scripts />
         </ThemeProvider>
       </body>
     </html>

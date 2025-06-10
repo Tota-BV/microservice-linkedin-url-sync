@@ -1,13 +1,18 @@
 import { createTRPCRouter } from "@/lib/trpc/init";
 
-import { resourcesRouter } from "./routes/resources";
+import { kvkRouter } from "@/features/agency-register/api/kvk";
+import { registerRouter } from "@/features/agency-register/api/register";
+
+import { agencyRouter } from "./routes/agency";
+import { authRouter } from "./routes/auth";
 import { todoRouter } from "./routes/todo";
-import { publicRouter } from "./routes/public";
 
 export const trpcRouter = createTRPCRouter({
+  auth: authRouter,
   todo: todoRouter,
-  resources: resourcesRouter,
-  public: publicRouter,
+  kvk: kvkRouter,
+  register: registerRouter,
+  agency: agencyRouter,
 });
 
 export type TRPCRouter = typeof trpcRouter;

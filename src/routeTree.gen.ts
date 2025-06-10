@@ -11,44 +11,40 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as DashboardLayoutImport } from './routes/dashboard/layout'
 import { Route as authLayoutImport } from './routes/(auth)/layout'
-import { Route as DashboardIndexImport } from './routes/dashboard/index'
-import { Route as publicIndexImport } from './routes/(public)/index'
+import { Route as appLayoutImport } from './routes/(app)/layout'
+import { Route as appIndexImport } from './routes/(app)/index'
 import { Route as authResetPasswordImport } from './routes/(auth)/reset-password'
 import { Route as authRegisterImport } from './routes/(auth)/register'
 import { Route as authLoginImport } from './routes/(auth)/login'
 import { Route as authForgotPasswordImport } from './routes/(auth)/forgot-password'
-import { Route as DashboardSettingsIndexImport } from './routes/dashboard/settings/index'
-import { Route as DashboardChatIndexImport } from './routes/dashboard/chat/index'
+import { Route as appWelcomeImport } from './routes/(app)/welcome'
+import { Route as appTestImport } from './routes/(app)/test'
 import { Route as authTwoFactorIndexImport } from './routes/(auth)/two-factor/index'
-import { Route as DashboardChatRagImport } from './routes/dashboard/chat/rag'
+import { Route as appSettingsIndexImport } from './routes/(app)/settings/index'
+import { Route as appProfileIndexImport } from './routes/(app)/profile/index'
+import { Route as appComplainceAndVerificationIndexImport } from './routes/(app)/complaince-and-verification/index'
+import { Route as appChatIndexImport } from './routes/(app)/chat/index'
 import { Route as authTwoFactorOtpImport } from './routes/(auth)/two-factor/otp'
+import { Route as appChatRagImport } from './routes/(app)/chat/rag'
 import { Route as authAcceptInvitationInvitationIdIndexImport } from './routes/(auth)/accept-invitation/$invitationId/index'
 
 // Create/Update Routes
-
-const DashboardLayoutRoute = DashboardLayoutImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const authLayoutRoute = authLayoutImport.update({
   id: '/(auth)',
   getParentRoute: () => rootRoute,
 } as any)
 
-const DashboardIndexRoute = DashboardIndexImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DashboardLayoutRoute,
+const appLayoutRoute = appLayoutImport.update({
+  id: '/(app)',
+  getParentRoute: () => rootRoute,
 } as any)
 
-const publicIndexRoute = publicIndexImport.update({
-  id: '/(public)/',
+const appIndexRoute = appIndexImport.update({
+  id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
 } as any)
 
 const authResetPasswordRoute = authResetPasswordImport.update({
@@ -75,16 +71,16 @@ const authForgotPasswordRoute = authForgotPasswordImport.update({
   getParentRoute: () => authLayoutRoute,
 } as any)
 
-const DashboardSettingsIndexRoute = DashboardSettingsIndexImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => DashboardLayoutRoute,
+const appWelcomeRoute = appWelcomeImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => appLayoutRoute,
 } as any)
 
-const DashboardChatIndexRoute = DashboardChatIndexImport.update({
-  id: '/chat/',
-  path: '/chat/',
-  getParentRoute: () => DashboardLayoutRoute,
+const appTestRoute = appTestImport.update({
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => appLayoutRoute,
 } as any)
 
 const authTwoFactorIndexRoute = authTwoFactorIndexImport.update({
@@ -93,16 +89,41 @@ const authTwoFactorIndexRoute = authTwoFactorIndexImport.update({
   getParentRoute: () => authLayoutRoute,
 } as any)
 
-const DashboardChatRagRoute = DashboardChatRagImport.update({
-  id: '/chat/rag',
-  path: '/chat/rag',
-  getParentRoute: () => DashboardLayoutRoute,
+const appSettingsIndexRoute = appSettingsIndexImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => appLayoutRoute,
+} as any)
+
+const appProfileIndexRoute = appProfileIndexImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => appLayoutRoute,
+} as any)
+
+const appComplainceAndVerificationIndexRoute =
+  appComplainceAndVerificationIndexImport.update({
+    id: '/complaince-and-verification/',
+    path: '/complaince-and-verification/',
+    getParentRoute: () => appLayoutRoute,
+  } as any)
+
+const appChatIndexRoute = appChatIndexImport.update({
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => appLayoutRoute,
 } as any)
 
 const authTwoFactorOtpRoute = authTwoFactorOtpImport.update({
   id: '/two-factor/otp',
   path: '/two-factor/otp',
   getParentRoute: () => authLayoutRoute,
+} as any)
+
+const appChatRagRoute = appChatRagImport.update({
+  id: '/chat/rag',
+  path: '/chat/rag',
+  getParentRoute: () => appLayoutRoute,
 } as any)
 
 const authAcceptInvitationInvitationIdIndexRoute =
@@ -116,6 +137,13 @@ const authAcceptInvitationInvitationIdIndexRoute =
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/(app)': {
+      id: '/(app)'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof appLayoutImport
+      parentRoute: typeof rootRoute
+    }
     '/(auth)': {
       id: '/(auth)'
       path: '/'
@@ -123,12 +151,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authLayoutImport
       parentRoute: typeof rootRoute
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardLayoutImport
-      parentRoute: typeof rootRoute
+    '/(app)/test': {
+      id: '/(app)/test'
+      path: '/test'
+      fullPath: '/test'
+      preLoaderRoute: typeof appTestImport
+      parentRoute: typeof appLayoutImport
+    }
+    '/(app)/welcome': {
+      id: '/(app)/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof appWelcomeImport
+      parentRoute: typeof appLayoutImport
     }
     '/(auth)/forgot-password': {
       id: '/(auth)/forgot-password'
@@ -158,19 +193,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authResetPasswordImport
       parentRoute: typeof authLayoutImport
     }
-    '/(public)/': {
-      id: '/(public)/'
+    '/(app)/': {
+      id: '/(app)/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof publicIndexImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof appIndexImport
+      parentRoute: typeof appLayoutImport
     }
-    '/dashboard/': {
-      id: '/dashboard/'
-      path: '/'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexImport
-      parentRoute: typeof DashboardLayoutImport
+    '/(app)/chat/rag': {
+      id: '/(app)/chat/rag'
+      path: '/chat/rag'
+      fullPath: '/chat/rag'
+      preLoaderRoute: typeof appChatRagImport
+      parentRoute: typeof appLayoutImport
     }
     '/(auth)/two-factor/otp': {
       id: '/(auth)/two-factor/otp'
@@ -179,12 +214,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authTwoFactorOtpImport
       parentRoute: typeof authLayoutImport
     }
-    '/dashboard/chat/rag': {
-      id: '/dashboard/chat/rag'
-      path: '/chat/rag'
-      fullPath: '/dashboard/chat/rag'
-      preLoaderRoute: typeof DashboardChatRagImport
-      parentRoute: typeof DashboardLayoutImport
+    '/(app)/chat/': {
+      id: '/(app)/chat/'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof appChatIndexImport
+      parentRoute: typeof appLayoutImport
+    }
+    '/(app)/complaince-and-verification/': {
+      id: '/(app)/complaince-and-verification/'
+      path: '/complaince-and-verification'
+      fullPath: '/complaince-and-verification'
+      preLoaderRoute: typeof appComplainceAndVerificationIndexImport
+      parentRoute: typeof appLayoutImport
+    }
+    '/(app)/profile/': {
+      id: '/(app)/profile/'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof appProfileIndexImport
+      parentRoute: typeof appLayoutImport
+    }
+    '/(app)/settings/': {
+      id: '/(app)/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof appSettingsIndexImport
+      parentRoute: typeof appLayoutImport
     }
     '/(auth)/two-factor/': {
       id: '/(auth)/two-factor/'
@@ -192,20 +248,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/two-factor'
       preLoaderRoute: typeof authTwoFactorIndexImport
       parentRoute: typeof authLayoutImport
-    }
-    '/dashboard/chat/': {
-      id: '/dashboard/chat/'
-      path: '/chat'
-      fullPath: '/dashboard/chat'
-      preLoaderRoute: typeof DashboardChatIndexImport
-      parentRoute: typeof DashboardLayoutImport
-    }
-    '/dashboard/settings/': {
-      id: '/dashboard/settings/'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsIndexImport
-      parentRoute: typeof DashboardLayoutImport
     }
     '/(auth)/accept-invitation/$invitationId/': {
       id: '/(auth)/accept-invitation/$invitationId/'
@@ -218,6 +260,33 @@ declare module '@tanstack/react-router' {
 }
 
 // Create and export the route tree
+
+interface appLayoutRouteChildren {
+  appTestRoute: typeof appTestRoute
+  appWelcomeRoute: typeof appWelcomeRoute
+  appIndexRoute: typeof appIndexRoute
+  appChatRagRoute: typeof appChatRagRoute
+  appChatIndexRoute: typeof appChatIndexRoute
+  appComplainceAndVerificationIndexRoute: typeof appComplainceAndVerificationIndexRoute
+  appProfileIndexRoute: typeof appProfileIndexRoute
+  appSettingsIndexRoute: typeof appSettingsIndexRoute
+}
+
+const appLayoutRouteChildren: appLayoutRouteChildren = {
+  appTestRoute: appTestRoute,
+  appWelcomeRoute: appWelcomeRoute,
+  appIndexRoute: appIndexRoute,
+  appChatRagRoute: appChatRagRoute,
+  appChatIndexRoute: appChatIndexRoute,
+  appComplainceAndVerificationIndexRoute:
+    appComplainceAndVerificationIndexRoute,
+  appProfileIndexRoute: appProfileIndexRoute,
+  appSettingsIndexRoute: appSettingsIndexRoute,
+}
+
+const appLayoutRouteWithChildren = appLayoutRoute._addFileChildren(
+  appLayoutRouteChildren,
+)
 
 interface authLayoutRouteChildren {
   authForgotPasswordRoute: typeof authForgotPasswordRoute
@@ -244,70 +313,60 @@ const authLayoutRouteWithChildren = authLayoutRoute._addFileChildren(
   authLayoutRouteChildren,
 )
 
-interface DashboardLayoutRouteChildren {
-  DashboardIndexRoute: typeof DashboardIndexRoute
-  DashboardChatRagRoute: typeof DashboardChatRagRoute
-  DashboardChatIndexRoute: typeof DashboardChatIndexRoute
-  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute
-}
-
-const DashboardLayoutRouteChildren: DashboardLayoutRouteChildren = {
-  DashboardIndexRoute: DashboardIndexRoute,
-  DashboardChatRagRoute: DashboardChatRagRoute,
-  DashboardChatIndexRoute: DashboardChatIndexRoute,
-  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
-}
-
-const DashboardLayoutRouteWithChildren = DashboardLayoutRoute._addFileChildren(
-  DashboardLayoutRouteChildren,
-)
-
 export interface FileRoutesByFullPath {
-  '/': typeof publicIndexRoute
-  '/dashboard': typeof DashboardLayoutRouteWithChildren
+  '/': typeof appIndexRoute
+  '/test': typeof appTestRoute
+  '/welcome': typeof appWelcomeRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
   '/reset-password': typeof authResetPasswordRoute
-  '/dashboard/': typeof DashboardIndexRoute
+  '/chat/rag': typeof appChatRagRoute
   '/two-factor/otp': typeof authTwoFactorOtpRoute
-  '/dashboard/chat/rag': typeof DashboardChatRagRoute
+  '/chat': typeof appChatIndexRoute
+  '/complaince-and-verification': typeof appComplainceAndVerificationIndexRoute
+  '/profile': typeof appProfileIndexRoute
+  '/settings': typeof appSettingsIndexRoute
   '/two-factor': typeof authTwoFactorIndexRoute
-  '/dashboard/chat': typeof DashboardChatIndexRoute
-  '/dashboard/settings': typeof DashboardSettingsIndexRoute
   '/accept-invitation/$invitationId': typeof authAcceptInvitationInvitationIdIndexRoute
 }
 
 export interface FileRoutesByTo {
-  '/': typeof publicIndexRoute
+  '/': typeof appIndexRoute
+  '/test': typeof appTestRoute
+  '/welcome': typeof appWelcomeRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
   '/reset-password': typeof authResetPasswordRoute
-  '/dashboard': typeof DashboardIndexRoute
+  '/chat/rag': typeof appChatRagRoute
   '/two-factor/otp': typeof authTwoFactorOtpRoute
-  '/dashboard/chat/rag': typeof DashboardChatRagRoute
+  '/chat': typeof appChatIndexRoute
+  '/complaince-and-verification': typeof appComplainceAndVerificationIndexRoute
+  '/profile': typeof appProfileIndexRoute
+  '/settings': typeof appSettingsIndexRoute
   '/two-factor': typeof authTwoFactorIndexRoute
-  '/dashboard/chat': typeof DashboardChatIndexRoute
-  '/dashboard/settings': typeof DashboardSettingsIndexRoute
   '/accept-invitation/$invitationId': typeof authAcceptInvitationInvitationIdIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
+  '/(app)': typeof appLayoutRouteWithChildren
   '/(auth)': typeof authLayoutRouteWithChildren
-  '/dashboard': typeof DashboardLayoutRouteWithChildren
+  '/(app)/test': typeof appTestRoute
+  '/(app)/welcome': typeof appWelcomeRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/register': typeof authRegisterRoute
   '/(auth)/reset-password': typeof authResetPasswordRoute
-  '/(public)/': typeof publicIndexRoute
-  '/dashboard/': typeof DashboardIndexRoute
+  '/(app)/': typeof appIndexRoute
+  '/(app)/chat/rag': typeof appChatRagRoute
   '/(auth)/two-factor/otp': typeof authTwoFactorOtpRoute
-  '/dashboard/chat/rag': typeof DashboardChatRagRoute
+  '/(app)/chat/': typeof appChatIndexRoute
+  '/(app)/complaince-and-verification/': typeof appComplainceAndVerificationIndexRoute
+  '/(app)/profile/': typeof appProfileIndexRoute
+  '/(app)/settings/': typeof appSettingsIndexRoute
   '/(auth)/two-factor/': typeof authTwoFactorIndexRoute
-  '/dashboard/chat/': typeof DashboardChatIndexRoute
-  '/dashboard/settings/': typeof DashboardSettingsIndexRoute
   '/(auth)/accept-invitation/$invitationId/': typeof authAcceptInvitationInvitationIdIndexRoute
 }
 
@@ -315,61 +374,67 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
+    | '/test'
+    | '/welcome'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/dashboard/'
+    | '/chat/rag'
     | '/two-factor/otp'
-    | '/dashboard/chat/rag'
+    | '/chat'
+    | '/complaince-and-verification'
+    | '/profile'
+    | '/settings'
     | '/two-factor'
-    | '/dashboard/chat'
-    | '/dashboard/settings'
     | '/accept-invitation/$invitationId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/test'
+    | '/welcome'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
-    | '/dashboard'
+    | '/chat/rag'
     | '/two-factor/otp'
-    | '/dashboard/chat/rag'
+    | '/chat'
+    | '/complaince-and-verification'
+    | '/profile'
+    | '/settings'
     | '/two-factor'
-    | '/dashboard/chat'
-    | '/dashboard/settings'
     | '/accept-invitation/$invitationId'
   id:
     | '__root__'
+    | '/(app)'
     | '/(auth)'
-    | '/dashboard'
+    | '/(app)/test'
+    | '/(app)/welcome'
     | '/(auth)/forgot-password'
     | '/(auth)/login'
     | '/(auth)/register'
     | '/(auth)/reset-password'
-    | '/(public)/'
-    | '/dashboard/'
+    | '/(app)/'
+    | '/(app)/chat/rag'
     | '/(auth)/two-factor/otp'
-    | '/dashboard/chat/rag'
+    | '/(app)/chat/'
+    | '/(app)/complaince-and-verification/'
+    | '/(app)/profile/'
+    | '/(app)/settings/'
     | '/(auth)/two-factor/'
-    | '/dashboard/chat/'
-    | '/dashboard/settings/'
     | '/(auth)/accept-invitation/$invitationId/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
+  appLayoutRoute: typeof appLayoutRouteWithChildren
   authLayoutRoute: typeof authLayoutRouteWithChildren
-  DashboardLayoutRoute: typeof DashboardLayoutRouteWithChildren
-  publicIndexRoute: typeof publicIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  appLayoutRoute: appLayoutRouteWithChildren,
   authLayoutRoute: authLayoutRouteWithChildren,
-  DashboardLayoutRoute: DashboardLayoutRouteWithChildren,
-  publicIndexRoute: publicIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -382,9 +447,21 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/(auth)",
-        "/dashboard",
-        "/(public)/"
+        "/(app)",
+        "/(auth)"
+      ]
+    },
+    "/(app)": {
+      "filePath": "(app)/layout.tsx",
+      "children": [
+        "/(app)/test",
+        "/(app)/welcome",
+        "/(app)/",
+        "/(app)/chat/rag",
+        "/(app)/chat/",
+        "/(app)/complaince-and-verification/",
+        "/(app)/profile/",
+        "/(app)/settings/"
       ]
     },
     "/(auth)": {
@@ -399,14 +476,13 @@ export const routeTree = rootRoute
         "/(auth)/accept-invitation/$invitationId/"
       ]
     },
-    "/dashboard": {
-      "filePath": "dashboard/layout.tsx",
-      "children": [
-        "/dashboard/",
-        "/dashboard/chat/rag",
-        "/dashboard/chat/",
-        "/dashboard/settings/"
-      ]
+    "/(app)/test": {
+      "filePath": "(app)/test.tsx",
+      "parent": "/(app)"
+    },
+    "/(app)/welcome": {
+      "filePath": "(app)/welcome.tsx",
+      "parent": "/(app)"
     },
     "/(auth)/forgot-password": {
       "filePath": "(auth)/forgot-password.tsx",
@@ -424,32 +500,37 @@ export const routeTree = rootRoute
       "filePath": "(auth)/reset-password.tsx",
       "parent": "/(auth)"
     },
-    "/(public)/": {
-      "filePath": "(public)/index.tsx"
+    "/(app)/": {
+      "filePath": "(app)/index.tsx",
+      "parent": "/(app)"
     },
-    "/dashboard/": {
-      "filePath": "dashboard/index.tsx",
-      "parent": "/dashboard"
+    "/(app)/chat/rag": {
+      "filePath": "(app)/chat/rag.tsx",
+      "parent": "/(app)"
     },
     "/(auth)/two-factor/otp": {
       "filePath": "(auth)/two-factor/otp.tsx",
       "parent": "/(auth)"
     },
-    "/dashboard/chat/rag": {
-      "filePath": "dashboard/chat/rag.tsx",
-      "parent": "/dashboard"
+    "/(app)/chat/": {
+      "filePath": "(app)/chat/index.tsx",
+      "parent": "/(app)"
+    },
+    "/(app)/complaince-and-verification/": {
+      "filePath": "(app)/complaince-and-verification/index.tsx",
+      "parent": "/(app)"
+    },
+    "/(app)/profile/": {
+      "filePath": "(app)/profile/index.tsx",
+      "parent": "/(app)"
+    },
+    "/(app)/settings/": {
+      "filePath": "(app)/settings/index.tsx",
+      "parent": "/(app)"
     },
     "/(auth)/two-factor/": {
       "filePath": "(auth)/two-factor/index.tsx",
       "parent": "/(auth)"
-    },
-    "/dashboard/chat/": {
-      "filePath": "dashboard/chat/index.tsx",
-      "parent": "/dashboard"
-    },
-    "/dashboard/settings/": {
-      "filePath": "dashboard/settings/index.tsx",
-      "parent": "/dashboard"
     },
     "/(auth)/accept-invitation/$invitationId/": {
       "filePath": "(auth)/accept-invitation/$invitationId/index.tsx",

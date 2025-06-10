@@ -1,5 +1,3 @@
-"use client";
-
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,14 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthHelpers } from "@/hooks/auth-hooks";
-import { authClient } from "@/lib/auth/auth-client";
-import { useTranslation } from "@/lib/intl/react";
+
 import { Link } from "@tanstack/react-router";
 import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 export default function ForgotPasswordForm() {
-  const { t } = useTranslation();
   const { forgotPassword } = useAuthHelpers();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,16 +40,18 @@ export default function ForgotPasswordForm() {
 
   if (isSubmitted) {
     return (
-      <main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+      <div>
         <Card className="w-[350px]">
           <CardHeader>
-            <CardTitle>{t("CHECK_EMAIL")}</CardTitle>
-            <CardDescription>{t("PASSWORD_RESET_LINK_SENT")}</CardDescription>
+            <CardTitle>CHECK_EMAIL</CardTitle>
+            <CardDescription>PASSWORD_RESET_LINK_SENT</CardDescription>
           </CardHeader>
           <CardContent>
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
-              <AlertDescription>{t("CHECK_SPAM")}</AlertDescription>
+              <AlertDescription>
+                If you don't see the email, check your spam folder.
+              </AlertDescription>
             </Alert>
           </CardContent>
           <CardFooter>
@@ -62,59 +60,40 @@ export default function ForgotPasswordForm() {
               className="w-full"
               onClick={() => setIsSubmitted(false)}
             >
-              <ArrowLeft className="mr-2 h-4 w-4" /> {t("BACK_TO_RESET")}
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to reset password
             </Button>
           </CardFooter>
         </Card>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle>{t("FORGOT_PASSWORD")}</CardTitle>
-          <CardDescription>{t("FORGOT_PASSWORD_DESC")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="email">{t("EMAIL")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t("ENTER_EMAIL")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            {error && (
-              <Alert variant="destructive" className="mt-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <Button
-              className="w-full mt-4"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? t("SENDING") : t("SEND_RESET_LINK")}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Link to="/login">
-            <Button variant="link" className="px-0">
-              {t("BACK_TO_SIGN_IN")}
-            </Button>
-          </Link>
-        </CardFooter>
-      </Card>
-    </main>
+    <div>
+      <form onSubmit={handleSubmit}>
+        <div className="grid w-full items-center gap-4">
+          <div className="flex flex-col space-y-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+        {error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <Button className="w-full mt-4" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "sending..." : "Send reset link"}
+        </Button>
+      </form>
+    </div>
   );
 }

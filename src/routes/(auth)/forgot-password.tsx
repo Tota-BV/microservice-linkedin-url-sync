@@ -1,4 +1,10 @@
-import { useTranslation } from "@/lib/intl/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import ForgotPasswordForm from "./-components/forgot-password";
 
@@ -7,18 +13,26 @@ export const Route = createFileRoute("/(auth)/forgot-password")({
 });
 
 function RouteComponent() {
-  const { t } = useTranslation();
-
   return (
-    <div className="p-2 md:p-6 flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-      <ForgotPasswordForm />
-
-      <div className="mt-4 text-center">
-        {t("DONT_HAVE_ACCOUNT")}{" "}
+    <div>
+      <Card className="min-w-md gap-6">
+        <CardHeader>
+          <CardTitle className="font-display text-2xl">
+            Forgot Password
+          </CardTitle>
+          <CardDescription className="text-balance text-muted-foreground text-sm">
+            Enter your email to recieve a link to reset your password
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <ForgotPasswordForm />
+        </CardContent>
+      </Card>
+      <div className="mt-4 text-center text-sm">
+        Dont have a account?{" "}
         <Link to="/login" className="underline">
-          {t("LOGIN")}
+          Login
         </Link>
-        !
       </div>
     </div>
   );

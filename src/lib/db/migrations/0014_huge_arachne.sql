@@ -1,0 +1,1 @@
+ALTER TABLE "agencies_profile" ADD COLUMN "skills" json DEFAULT '{}'::json NOT NULL;

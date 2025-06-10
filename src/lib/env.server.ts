@@ -5,10 +5,10 @@ export const env = createEnv({
   server: {
     SERVER_URL: z.string().url().optional(),
     DATABASE_URL: z.string().url(),
-    RESEND_API_KEY: z.string(),
     BETTER_AUTH_SECRET: z.string(),
-    OPENAI_API_KEY: z.string(),
-    ANTHROPIC_API_KEY: z.string(),
+    // RESEND_API_KEY: z.string(),
+    // OPENAI_API_KEY: z.string(),
+    // ANTHROPIC_API_KEY: z.string(),
   },
 
   /**

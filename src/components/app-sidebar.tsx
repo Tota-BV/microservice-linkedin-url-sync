@@ -36,7 +36,7 @@ const data = {
     },
     {
       title: "Candidates",
-      url: "#",
+      url: "/candidates",
       icon: UserRoundCheckIcon,
     },
     {

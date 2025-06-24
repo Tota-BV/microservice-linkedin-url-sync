@@ -1,0 +1,1 @@
+ALTER TABLE "candidates" ALTER COLUMN "agency_id" SET DATA TYPE uuid;

@@ -1,2 +1,0 @@
-CREATE TYPE "public"."type" AS ENUM('business-registration', 'bank-account', 'customer-screening', 'tax-verification');--> statement-breakpoint
-ALTER TABLE "agency_documents" ALTER COLUMN "type" SET DATA TYPE "public"."type" USING "type"::"public"."type";

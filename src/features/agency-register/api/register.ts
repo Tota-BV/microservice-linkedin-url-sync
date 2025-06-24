@@ -1,6 +1,12 @@
 import { auth } from "@/lib/auth/auth";
 import { db } from "@/lib/db";
-import { agencyContact, agencyProfile, countries } from "@/lib/db/schema";
+import {
+  agency,
+  agencyContact,
+  agencyOfficeLocation,
+  agencyProfile,
+  countries,
+} from "@/lib/db/schema";
 import { createTRPCRouter, publicProcedure } from "@/lib/trpc/init";
 import { z } from "zod";
 import { accountSchema, agencySchema, contactSchema } from "../model/schema";
@@ -14,7 +20,7 @@ export const registerRouter = createTRPCRouter({
         account: accountSchema,
       }),
     )
-    .query(async ({ input: { account, agency, contact } }) => {
+    .query(async ({ input }) => {
       let createdUser:
         | Awaited<ReturnType<typeof auth.api.signUpEmail>>
         | undefined;
@@ -22,58 +28,76 @@ export const registerRouter = createTRPCRouter({
       try {
         createdUser = await auth.api.signUpEmail({
           body: {
-            email: account.email,
-            password: account.password,
-            name: `${contact.name} ${contact.namePrefix ?? " "}${contact.surname}`,
+            email: input.account.email,
+            password: input.account.password,
+            name: `${input.contact.name} ${input.contact.namePrefix ?? " "}${input.contact.surname}`,
           },
         });
 
         await db.transaction(async (tx) => {
-          await tx
-            .insert(countries)
-            .values({
-              code: agency.country.code,
-              dialCode: agency.country.dial_code,
-              emoji: agency.country.emoji,
-              name: agency.country.name,
-            })
-            .onConflictDoNothing();
+          try {
+            await tx
+              .insert(countries)
+              .values({
+                code: input.agency.country.code,
+                dialCode: input.agency.country.dial_code,
+                emoji: input.agency.country.emoji,
+                name: input.agency.country.name,
+              })
+              .onConflictDoNothing();
 
-          const [insertedAgency] = await tx
-            .insert(agencyProfile)
-            .values({
-              // biome-ignore lint/style/noNonNullAssertion: <explanation>
-              userId: createdUser!.user.id,
-              countryCode: agency.country.code,
-              companyName: agency.company.name,
-              companyNumber: agency.company.number,
-              companyWebsite: agency.company.website,
-              postalCode: agency.address.postalCode,
-              houseNumber: agency.address.houseNumber,
-              houseNumberAddition: agency.address.houseNumberAddition,
-              street: agency.address.street,
-              city: agency.address.city,
-              phoneDialCode: agency.phone.dial_code,
-              phoneNumber: agency.phone.number,
-            })
-            .returning();
+            const [insertedAgency] = await tx
+              .insert(agency)
+              .values({
+                // biome-ignore lint/style/noNonNullAssertion: <explanation>
+                userId: createdUser!.user.id,
+                countryCode: input.agency.country.code,
+                name: input.agency.company.name,
+                agencyNumber: input.agency.company.number,
+                website: input.agency.company.website,
 
-          await tx.insert(agencyContact).values({
-            // biome-ignore lint/style/noNonNullAssertion: <explanation>
-            userId: createdUser!.user.id,
-            agencyId: insertedAgency.id,
-            pronounce: contact.pronounce,
-            name: contact.name,
-            surname: contact.surname,
-            jobTitle: contact.jobTitle,
-            phoneDialCode: contact.phone.dial_code,
-            phoneNumber: contact.phone.number,
-            namePrefix: contact.namePrefix,
-          });
+                postalCode: input.agency.address.postalCode,
+                houseNumber: input.agency.address.houseNumber,
+                houseNumberAddition: input.agency.address.houseNumberAddition,
+                street: input.agency.address.street,
+                city: input.agency.address.city,
+                phoneDialCode: input.agency.phone.dial_code,
+                phoneNumber: input.agency.phone.number,
+              })
+              .returning();
+
+            await tx.insert(agencyContact).values({
+              agencyId: insertedAgency.id,
+              pronounce: input.contact.pronounce,
+              name: input.contact.name,
+              surname: input.contact.surname,
+              jobTitle: input.contact.jobTitle,
+              phoneDialCode: input.contact.phone.dial_code,
+              phoneNumber: input.contact.phone.number,
+              namePrefix: input.contact.namePrefix,
+            });
+
+            const [insertedAgencyProfile] = await tx
+              .insert(agencyProfile)
+              .values({
+                agencyId: insertedAgency.id,
+              })
+              .returning();
+
+            await tx.insert(agencyOfficeLocation).values({
+              profileId: insertedAgencyProfile.id,
+              countryCode: input.agency.country.code,
+              isPrimary: 1,
+              city: input.agency.address.city,
+            });
+          } catch (err) {
+            // biome-ignore lint/complexity/noUselessCatch: <explanation>
+            throw err;
+          }
         });
 
         return {
-          userId: createdUser.user.id,
+          userId: 11, // createdUser.user.id,
           message: "Agency account created successfully.",
         };
       } catch (err) {

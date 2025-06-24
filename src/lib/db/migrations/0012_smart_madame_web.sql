@@ -1,1 +1,0 @@
-ALTER TABLE "agencies_profile" ADD COLUMN "usps" json DEFAULT '{}'::json;

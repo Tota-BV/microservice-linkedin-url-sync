@@ -1,42 +1,48 @@
 import { uploadFileSchema } from "@/features/agency-profile/model/file-upload.schema";
 import { updateAgencyProfileSchema } from "@/features/agency-profile/model/schema";
 import { db } from "@/lib/db";
-import { agencyDocuments, agencyProfile } from "@/lib/db/schema";
+import { agency, agencyDocuments, agencyProfile } from "@/lib/db/schema";
 
 import { createTRPCRouter, protectedProcedure } from "@/lib/trpc/init";
+
 import { eq } from "drizzle-orm";
 
 export const agencyRouter = createTRPCRouter({
-  getProfile: protectedProcedure.query(async ({ ctx: { session } }) => {
-    return db.query.agencyProfile.findFirst({
-      where: eq(agencyProfile.userId, session.user.id),
+  getAgency: protectedProcedure.query(async ({ ctx: { session } }) => {
+    const agencyRecord = await db.query.agency.findFirst({
+      where: eq(agency.userId, session.user.id),
       with: {
-        country: true,
         documents: true,
+        tokens: true,
       },
     });
+
+    return agencyRecord;
   }),
-  updateProfile: protectedProcedure
+  update: protectedProcedure
     .input(updateAgencyProfileSchema)
     .mutation(async ({ input, ctx: { session } }) => {
+      const agencyRecord = await db.query.agency.findFirst({
+        where: eq(agency.userId, session.user.id),
+      });
+
       return db
         .update(agencyProfile)
         .set(input)
-        .where(eq(agencyProfile.userId, session.user.id));
+        .where(eq(agencyProfile.agencyId, agencyRecord.id));
     }),
   uploadDocuments: protectedProcedure
     .input(uploadFileSchema)
     .mutation(async ({ input, ctx: { session } }) => {
-      console.log("SERVER", input);
-
-      const profile = await db.query.agencyProfile.findFirst({
-        where: eq(agencyProfile.userId, session.user.id),
+      const agencyRecord = await db.query.agency.findFirst({
+        where: eq(agency.userId, session.user.id),
       });
 
-      if (profile) {
+      if (agencyRecord) {
         const uploadDocuments = await db.query.agencyDocuments.findMany({
-          where: eq(agencyDocuments.agencyProfileId, profile.id),
+          where: eq(agencyDocuments.agencyId, agencyRecord.id),
         });
+        console.log("SERVER", uploadDocuments);
 
         for (const doc in input) {
           const uploadDocument = uploadDocuments.find((d) => d.type === doc);
@@ -53,7 +59,7 @@ export const agencyRouter = createTRPCRouter({
               .where(eq(agencyDocuments.id, uploadDocument.id));
           } else {
             await db.insert(agencyDocuments).values({
-              agencyProfileId: profile.id,
+              agencyId: agencyRecord.id,
               name: input[doc]?.name,
               url: input[doc]?.name,
               type: doc,

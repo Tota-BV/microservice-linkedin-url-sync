@@ -12,11 +12,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useTRPC } from "@/lib/trpc/react";
 import { useDebouncedValue } from "@tanstack/react-pacer/debouncer";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Loader2Icon } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import React from "react";
 import { useFormContext } from "react-hook-form";
 import type { components, paths } from "../../api/api";

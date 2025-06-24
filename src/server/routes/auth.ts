@@ -14,7 +14,6 @@ export const authRouter = createTRPCRouter({
       }),
     )
     .mutation(({ input }) => {
-      console.log({ input });
       return auth.api.signInEmail({ body: input });
     }),
 });

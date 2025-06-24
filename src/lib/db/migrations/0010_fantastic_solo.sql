@@ -1,0 +1,3 @@
+ALTER TABLE "agencies_profile" ALTER COLUMN "references_and_projects" SET DATA TYPE json;--> statement-breakpoint
+ALTER TABLE "agencies_profile" ALTER COLUMN "references_and_projects" SET DEFAULT '[]'::json;--> statement-breakpoint
+ALTER TABLE "agencies_profile" ALTER COLUMN "references_and_projects" SET NOT NULL;

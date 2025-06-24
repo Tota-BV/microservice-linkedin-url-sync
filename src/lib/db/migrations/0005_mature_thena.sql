@@ -1,0 +1,1 @@
+ALTER TABLE "agencies_profile" DROP COLUMN "references_and_projects";

@@ -7,3 +7,8 @@ export type Document = {
   title: string;
   icon: React.ReactNode;
 };
+
+export type ReferenceAndProject = {
+  title: string;
+  text: string;
+};

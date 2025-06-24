@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC } from "@/lib/trpc/react";
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileUpIcon, PlusIcon, UploadIcon } from "lucide-react";
 import { useState } from "react";
@@ -18,15 +19,17 @@ function BulkUploadPage() {
   const [csvData, setCsvData] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-  const bulkUploadMutation = trpc.candidates.bulkUpload.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Successfully uploaded ${data.length} candidates`);
-      setCsvData("");
-    },
-    onError: (error) => {
-      toast.error(`Upload failed: ${error.message}`);
-    },
-  });
+  const bulkUploadMutation = useMutation(
+    trpc.candidates.bulkUpload.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(`Successfully uploaded ${data.length} candidates`);
+        setCsvData("");
+      },
+      onError: (error) => {
+        toast.error(`Upload failed: ${error.message}`);
+      },
+    }),
+  );
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,45 +44,50 @@ function BulkUploadPage() {
   };
 
   const parseCsvData = (csvText: string) => {
-    const lines = csvText.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    
-    return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
-      const candidate: any = {};
-      
-      headers.forEach((header, index) => {
-        const value = values[index] || '';
-        
-        switch (header) {
-          case 'name':
-            candidate.name = value;
-            break;
-          case 'surname':
-            candidate.surname = value;
-            break;
-          case 'email':
-            candidate.email = value;
-            break;
-          case 'tel number':
-          case 'phone':
-          case 'telephone':
-            candidate.telNumber = value;
-            break;
-          case 'date of birth':
-          case 'dob':
-          case 'birth date':
-            candidate.dateOfBirth = value;
-            break;
-          case 'linkedin':
-          case 'linkedin url':
-            candidate.linkedIn = value;
-            break;
-        }
-      });
-      
-      return candidate;
-    }).filter(candidate => candidate.name && candidate.surname && candidate.email);
+    const lines = csvText.trim().split("\n");
+    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+
+    return lines
+      .slice(1)
+      .map((line) => {
+        const values = line.split(",").map((v) => v.trim());
+        const candidate: any = {};
+
+        headers.forEach((header, index) => {
+          const value = values[index] || "";
+
+          switch (header) {
+            case "name":
+              candidate.name = value;
+              break;
+            case "surname":
+              candidate.surname = value;
+              break;
+            case "email":
+              candidate.email = value;
+              break;
+            case "tel number":
+            case "phone":
+            case "telephone":
+              candidate.telNumber = value;
+              break;
+            case "date of birth":
+            case "dob":
+            case "birth date":
+              candidate.dateOfBirth = value;
+              break;
+            case "linkedin":
+            case "linkedin url":
+              candidate.linkedIn = value;
+              break;
+          }
+        });
+
+        return candidate;
+      })
+      .filter(
+        (candidate) => candidate.name && candidate.surname && candidate.email,
+      );
   };
 
   const handleBulkUpload = async () => {
@@ -95,7 +103,7 @@ function BulkUploadPage() {
         toast.error("No valid candidates found in the data");
         return;
       }
-      
+
       await bulkUploadMutation.mutateAsync(candidates);
     } catch (error) {
       console.error("Upload error:", error);
@@ -115,7 +123,6 @@ function BulkUploadPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileUpIcon className="w-5 h-5" />
               Upload CSV File
             </CardTitle>
           </CardHeader>
@@ -134,7 +141,8 @@ function BulkUploadPage() {
               <div className="text-sm text-gray-600">
                 <p className="font-medium mb-2">Expected CSV format:</p>
                 <code className="block bg-gray-100 p-2 rounded text-xs">
-                  Name,Surname,Email,Tel Number,Date of Birth,LinkedIn<br/>
+                  Name,Surname,Email,Tel Number,Date of Birth,LinkedIn
+                  <br />
                   John,Doe,john@example.com,+1234567890,1990-01-01,https://linkedin.com/in/johndoe
                 </code>
               </div>
@@ -146,7 +154,6 @@ function BulkUploadPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PlusIcon className="w-5 h-5" />
               Manual CSV Entry
             </CardTitle>
           </CardHeader>
@@ -186,7 +193,7 @@ function BulkUploadPage() {
                   }
                 })()}
               </div>
-              <Button 
+              <Button
                 onClick={handleBulkUpload}
                 disabled={isUploading || !csvData.trim()}
                 className="w-full"

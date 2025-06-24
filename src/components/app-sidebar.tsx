@@ -2,9 +2,7 @@ import {
   BookOpenTextIcon,
   CalendarCheckIcon,
   CogIcon,
-  FileIcon,
-  LayoutDashboardIcon,
-  MessageCircleIcon,
+  DollarSignIcon,
   MessageCircleMoreIcon,
   ShieldCheckIcon,
   UserRoundCheckIcon,
@@ -30,51 +28,24 @@ const data = {
   },
   navMain: [
     {
-      title: "Candidate Verification",
-      url: "#",
-      icon: ShieldCheckIcon,
-    },
-    {
       title: "Candidates",
       url: "/candidates",
       icon: UserRoundCheckIcon,
     },
     {
-      title: "Schedule check & Matches",
-      url: "#",
-      icon: CalendarCheckIcon,
+      title: "Profile",
+      url: "/profile",
+      icon: CogIcon,
     },
     {
-      title: "Chats",
-      url: "#",
-      icon: MessageCircleMoreIcon,
-    },
-    {
-      title: "Knowledge bank",
-      url: "#",
-      icon: BookOpenTextIcon,
+      title: "Tokens",
+      url: "/tokens",
+      icon: DollarSignIcon,
     },
     {
       title: "Invoices",
-      url: "#",
-      icon: CogIcon,
-    },
-
-    {
-      title: "Settings",
-      url: "#",
-      icon: CogIcon,
-    },
-
-    {
-      title: "Profile",
-      url: "#",
-      icon: CogIcon,
-    },
-    {
-      title: "Compliance",
-      url: "#",
-      icon: CogIcon,
+      url: "/invoices",
+      icon: DollarSignIcon,
     },
   ],
 };

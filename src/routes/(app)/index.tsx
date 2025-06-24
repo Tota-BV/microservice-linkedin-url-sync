@@ -24,7 +24,7 @@ function RouteComponent() {
       <div className="grid grid-cols-12 gap-4">
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-end gap-2">
+            <CardTitle className="flex items-start gap-2">
               <Building2Icon />
               Company Views
             </CardTitle>
@@ -36,7 +36,7 @@ function RouteComponent() {
         </Card>
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-end gap-2">
+            <CardTitle className="flex items-start gap-2">
               <UserRoundSearchIcon />
               Candidate Views
             </CardTitle>
@@ -48,7 +48,7 @@ function RouteComponent() {
         </Card>
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-end gap-2">
+            <CardTitle className="flex items-start gap-2">
               <CalendarCheckIcon />
               Schedule checks
             </CardTitle>
@@ -60,7 +60,7 @@ function RouteComponent() {
         </Card>
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-end gap-2">
+            <CardTitle className="flex items-start gap-2">
               <MessageCircleMoreIcon />
               Chats
             </CardTitle>
@@ -72,7 +72,7 @@ function RouteComponent() {
         </Card>
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-end gap-2">
+            <CardTitle className="flex items-start gap-2">
               <ReceiptTextIcon />
               Contracts
             </CardTitle>
@@ -84,7 +84,7 @@ function RouteComponent() {
         </Card>
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-end gap-2">
+            <CardTitle className="flex items-start gap-2">
               <StarIcon />
               Reviews
             </CardTitle>

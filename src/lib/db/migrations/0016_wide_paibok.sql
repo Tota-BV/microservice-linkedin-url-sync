@@ -1,1 +1,0 @@
-ALTER TABLE "agencies_profile" ADD COLUMN "references_and_projects" text DEFAULT '' NOT NULL;

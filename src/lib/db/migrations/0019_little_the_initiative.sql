@@ -1,0 +1,1 @@
+ALTER TABLE "agencies_tokens" ADD CONSTRAINT "agencies_tokens_agency_id_unique" UNIQUE("agency_id");

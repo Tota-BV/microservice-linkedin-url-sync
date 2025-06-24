@@ -1,20 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useTRPC } from "@/lib/trpc/react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { use$ } from "@legendapp/state/react";
 import { skipToken, useQuery } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
 import { agencyStore$ } from "../model/agency.store.client";
-import { type AccountSchema, accountSchema } from "../model/schema";
 
 export function StepFourComplete() {
   const stepper = use$(agencyStore$.data);
@@ -31,8 +18,6 @@ export function StepFourComplete() {
         : skipToken,
     ),
   );
-
-  console.log(register.error);
 
   if (register.isFetching || register.isLoading) {
     return (

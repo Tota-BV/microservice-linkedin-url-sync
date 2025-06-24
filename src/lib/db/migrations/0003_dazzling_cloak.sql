@@ -1,0 +1,1 @@
+ALTER TABLE "agencies" RENAME COLUMN "agency_description" TO "description";

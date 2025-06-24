@@ -14,20 +14,18 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as authLayoutImport } from './routes/(auth)/layout'
 import { Route as appLayoutImport } from './routes/(app)/layout'
 import { Route as appIndexImport } from './routes/(app)/index'
-import { Route as authResetPasswordImport } from './routes/(auth)/reset-password'
 import { Route as authRegisterImport } from './routes/(auth)/register'
 import { Route as authLoginImport } from './routes/(auth)/login'
-import { Route as authForgotPasswordImport } from './routes/(auth)/forgot-password'
 import { Route as appWelcomeImport } from './routes/(app)/welcome'
-import { Route as appTestImport } from './routes/(app)/test'
-import { Route as authTwoFactorIndexImport } from './routes/(auth)/two-factor/index'
-import { Route as appSettingsIndexImport } from './routes/(app)/settings/index'
+import { Route as appTokensIndexImport } from './routes/(app)/tokens/index'
 import { Route as appProfileIndexImport } from './routes/(app)/profile/index'
-import { Route as appComplainceAndVerificationIndexImport } from './routes/(app)/complaince-and-verification/index'
-import { Route as appChatIndexImport } from './routes/(app)/chat/index'
-import { Route as authTwoFactorOtpImport } from './routes/(auth)/two-factor/otp'
-import { Route as appChatRagImport } from './routes/(app)/chat/rag'
-import { Route as authAcceptInvitationInvitationIdIndexImport } from './routes/(auth)/accept-invitation/$invitationId/index'
+import { Route as appInvoicesIndexImport } from './routes/(app)/invoices/index'
+import { Route as appCandidatesIndexImport } from './routes/(app)/candidates/index'
+import { Route as appTokensSuccessImport } from './routes/(app)/tokens/success'
+import { Route as appCandidatesBulkUploadImport } from './routes/(app)/candidates/bulk-upload'
+import { Route as appCandidatesCandidateIdLayoutImport } from './routes/(app)/candidates/$candidateId/layout'
+import { Route as appCandidatesCandidateIdProfileImport } from './routes/(app)/candidates/$candidateId/profile'
+import { Route as appCandidatesCandidateIdMatchingCriteriaImport } from './routes/(app)/candidates/$candidateId/matching-criteria'
 
 // Create/Update Routes
 
@@ -47,12 +45,6 @@ const appIndexRoute = appIndexImport.update({
   getParentRoute: () => appLayoutRoute,
 } as any)
 
-const authResetPasswordRoute = authResetPasswordImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => authLayoutRoute,
-} as any)
-
 const authRegisterRoute = authRegisterImport.update({
   id: '/register',
   path: '/register',
@@ -65,33 +57,15 @@ const authLoginRoute = authLoginImport.update({
   getParentRoute: () => authLayoutRoute,
 } as any)
 
-const authForgotPasswordRoute = authForgotPasswordImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => authLayoutRoute,
-} as any)
-
 const appWelcomeRoute = appWelcomeImport.update({
   id: '/welcome',
   path: '/welcome',
   getParentRoute: () => appLayoutRoute,
 } as any)
 
-const appTestRoute = appTestImport.update({
-  id: '/test',
-  path: '/test',
-  getParentRoute: () => appLayoutRoute,
-} as any)
-
-const authTwoFactorIndexRoute = authTwoFactorIndexImport.update({
-  id: '/two-factor/',
-  path: '/two-factor/',
-  getParentRoute: () => authLayoutRoute,
-} as any)
-
-const appSettingsIndexRoute = appSettingsIndexImport.update({
-  id: '/settings/',
-  path: '/settings/',
+const appTokensIndexRoute = appTokensIndexImport.update({
+  id: '/tokens/',
+  path: '/tokens/',
   getParentRoute: () => appLayoutRoute,
 } as any)
 
@@ -101,36 +75,49 @@ const appProfileIndexRoute = appProfileIndexImport.update({
   getParentRoute: () => appLayoutRoute,
 } as any)
 
-const appComplainceAndVerificationIndexRoute =
-  appComplainceAndVerificationIndexImport.update({
-    id: '/complaince-and-verification/',
-    path: '/complaince-and-verification/',
+const appInvoicesIndexRoute = appInvoicesIndexImport.update({
+  id: '/invoices/',
+  path: '/invoices/',
+  getParentRoute: () => appLayoutRoute,
+} as any)
+
+const appCandidatesIndexRoute = appCandidatesIndexImport.update({
+  id: '/candidates/',
+  path: '/candidates/',
+  getParentRoute: () => appLayoutRoute,
+} as any)
+
+const appTokensSuccessRoute = appTokensSuccessImport.update({
+  id: '/tokens/success',
+  path: '/tokens/success',
+  getParentRoute: () => appLayoutRoute,
+} as any)
+
+const appCandidatesBulkUploadRoute = appCandidatesBulkUploadImport.update({
+  id: '/candidates/bulk-upload',
+  path: '/candidates/bulk-upload',
+  getParentRoute: () => appLayoutRoute,
+} as any)
+
+const appCandidatesCandidateIdLayoutRoute =
+  appCandidatesCandidateIdLayoutImport.update({
+    id: '/candidates/$candidateId',
+    path: '/candidates/$candidateId',
     getParentRoute: () => appLayoutRoute,
   } as any)
 
-const appChatIndexRoute = appChatIndexImport.update({
-  id: '/chat/',
-  path: '/chat/',
-  getParentRoute: () => appLayoutRoute,
-} as any)
+const appCandidatesCandidateIdProfileRoute =
+  appCandidatesCandidateIdProfileImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => appCandidatesCandidateIdLayoutRoute,
+  } as any)
 
-const authTwoFactorOtpRoute = authTwoFactorOtpImport.update({
-  id: '/two-factor/otp',
-  path: '/two-factor/otp',
-  getParentRoute: () => authLayoutRoute,
-} as any)
-
-const appChatRagRoute = appChatRagImport.update({
-  id: '/chat/rag',
-  path: '/chat/rag',
-  getParentRoute: () => appLayoutRoute,
-} as any)
-
-const authAcceptInvitationInvitationIdIndexRoute =
-  authAcceptInvitationInvitationIdIndexImport.update({
-    id: '/accept-invitation/$invitationId/',
-    path: '/accept-invitation/$invitationId/',
-    getParentRoute: () => authLayoutRoute,
+const appCandidatesCandidateIdMatchingCriteriaRoute =
+  appCandidatesCandidateIdMatchingCriteriaImport.update({
+    id: '/matching-criteria',
+    path: '/matching-criteria',
+    getParentRoute: () => appCandidatesCandidateIdLayoutRoute,
   } as any)
 
 // Populate the FileRoutesByPath interface
@@ -151,26 +138,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authLayoutImport
       parentRoute: typeof rootRoute
     }
-    '/(app)/test': {
-      id: '/(app)/test'
-      path: '/test'
-      fullPath: '/test'
-      preLoaderRoute: typeof appTestImport
-      parentRoute: typeof appLayoutImport
-    }
     '/(app)/welcome': {
       id: '/(app)/welcome'
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof appWelcomeImport
       parentRoute: typeof appLayoutImport
-    }
-    '/(auth)/forgot-password': {
-      id: '/(auth)/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof authForgotPasswordImport
-      parentRoute: typeof authLayoutImport
     }
     '/(auth)/login': {
       id: '/(auth)/login'
@@ -186,13 +159,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authRegisterImport
       parentRoute: typeof authLayoutImport
     }
-    '/(auth)/reset-password': {
-      id: '/(auth)/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof authResetPasswordImport
-      parentRoute: typeof authLayoutImport
-    }
     '/(app)/': {
       id: '/(app)/'
       path: '/'
@@ -200,32 +166,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appIndexImport
       parentRoute: typeof appLayoutImport
     }
-    '/(app)/chat/rag': {
-      id: '/(app)/chat/rag'
-      path: '/chat/rag'
-      fullPath: '/chat/rag'
-      preLoaderRoute: typeof appChatRagImport
+    '/(app)/candidates/$candidateId': {
+      id: '/(app)/candidates/$candidateId'
+      path: '/candidates/$candidateId'
+      fullPath: '/candidates/$candidateId'
+      preLoaderRoute: typeof appCandidatesCandidateIdLayoutImport
       parentRoute: typeof appLayoutImport
     }
-    '/(auth)/two-factor/otp': {
-      id: '/(auth)/two-factor/otp'
-      path: '/two-factor/otp'
-      fullPath: '/two-factor/otp'
-      preLoaderRoute: typeof authTwoFactorOtpImport
-      parentRoute: typeof authLayoutImport
-    }
-    '/(app)/chat/': {
-      id: '/(app)/chat/'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof appChatIndexImport
+    '/(app)/candidates/bulk-upload': {
+      id: '/(app)/candidates/bulk-upload'
+      path: '/candidates/bulk-upload'
+      fullPath: '/candidates/bulk-upload'
+      preLoaderRoute: typeof appCandidatesBulkUploadImport
       parentRoute: typeof appLayoutImport
     }
-    '/(app)/complaince-and-verification/': {
-      id: '/(app)/complaince-and-verification/'
-      path: '/complaince-and-verification'
-      fullPath: '/complaince-and-verification'
-      preLoaderRoute: typeof appComplainceAndVerificationIndexImport
+    '/(app)/tokens/success': {
+      id: '/(app)/tokens/success'
+      path: '/tokens/success'
+      fullPath: '/tokens/success'
+      preLoaderRoute: typeof appTokensSuccessImport
+      parentRoute: typeof appLayoutImport
+    }
+    '/(app)/candidates/': {
+      id: '/(app)/candidates/'
+      path: '/candidates'
+      fullPath: '/candidates'
+      preLoaderRoute: typeof appCandidatesIndexImport
+      parentRoute: typeof appLayoutImport
+    }
+    '/(app)/invoices/': {
+      id: '/(app)/invoices/'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof appInvoicesIndexImport
       parentRoute: typeof appLayoutImport
     }
     '/(app)/profile/': {
@@ -235,53 +208,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appProfileIndexImport
       parentRoute: typeof appLayoutImport
     }
-    '/(app)/settings/': {
-      id: '/(app)/settings/'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof appSettingsIndexImport
+    '/(app)/tokens/': {
+      id: '/(app)/tokens/'
+      path: '/tokens'
+      fullPath: '/tokens'
+      preLoaderRoute: typeof appTokensIndexImport
       parentRoute: typeof appLayoutImport
     }
-    '/(auth)/two-factor/': {
-      id: '/(auth)/two-factor/'
-      path: '/two-factor'
-      fullPath: '/two-factor'
-      preLoaderRoute: typeof authTwoFactorIndexImport
-      parentRoute: typeof authLayoutImport
+    '/(app)/candidates/$candidateId/matching-criteria': {
+      id: '/(app)/candidates/$candidateId/matching-criteria'
+      path: '/matching-criteria'
+      fullPath: '/candidates/$candidateId/matching-criteria'
+      preLoaderRoute: typeof appCandidatesCandidateIdMatchingCriteriaImport
+      parentRoute: typeof appCandidatesCandidateIdLayoutImport
     }
-    '/(auth)/accept-invitation/$invitationId/': {
-      id: '/(auth)/accept-invitation/$invitationId/'
-      path: '/accept-invitation/$invitationId'
-      fullPath: '/accept-invitation/$invitationId'
-      preLoaderRoute: typeof authAcceptInvitationInvitationIdIndexImport
-      parentRoute: typeof authLayoutImport
+    '/(app)/candidates/$candidateId/profile': {
+      id: '/(app)/candidates/$candidateId/profile'
+      path: '/profile'
+      fullPath: '/candidates/$candidateId/profile'
+      preLoaderRoute: typeof appCandidatesCandidateIdProfileImport
+      parentRoute: typeof appCandidatesCandidateIdLayoutImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface appCandidatesCandidateIdLayoutRouteChildren {
+  appCandidatesCandidateIdMatchingCriteriaRoute: typeof appCandidatesCandidateIdMatchingCriteriaRoute
+  appCandidatesCandidateIdProfileRoute: typeof appCandidatesCandidateIdProfileRoute
+}
+
+const appCandidatesCandidateIdLayoutRouteChildren: appCandidatesCandidateIdLayoutRouteChildren =
+  {
+    appCandidatesCandidateIdMatchingCriteriaRoute:
+      appCandidatesCandidateIdMatchingCriteriaRoute,
+    appCandidatesCandidateIdProfileRoute: appCandidatesCandidateIdProfileRoute,
+  }
+
+const appCandidatesCandidateIdLayoutRouteWithChildren =
+  appCandidatesCandidateIdLayoutRoute._addFileChildren(
+    appCandidatesCandidateIdLayoutRouteChildren,
+  )
+
 interface appLayoutRouteChildren {
-  appTestRoute: typeof appTestRoute
   appWelcomeRoute: typeof appWelcomeRoute
   appIndexRoute: typeof appIndexRoute
-  appChatRagRoute: typeof appChatRagRoute
-  appChatIndexRoute: typeof appChatIndexRoute
-  appComplainceAndVerificationIndexRoute: typeof appComplainceAndVerificationIndexRoute
+  appCandidatesCandidateIdLayoutRoute: typeof appCandidatesCandidateIdLayoutRouteWithChildren
+  appCandidatesBulkUploadRoute: typeof appCandidatesBulkUploadRoute
+  appTokensSuccessRoute: typeof appTokensSuccessRoute
+  appCandidatesIndexRoute: typeof appCandidatesIndexRoute
+  appInvoicesIndexRoute: typeof appInvoicesIndexRoute
   appProfileIndexRoute: typeof appProfileIndexRoute
-  appSettingsIndexRoute: typeof appSettingsIndexRoute
+  appTokensIndexRoute: typeof appTokensIndexRoute
 }
 
 const appLayoutRouteChildren: appLayoutRouteChildren = {
-  appTestRoute: appTestRoute,
   appWelcomeRoute: appWelcomeRoute,
   appIndexRoute: appIndexRoute,
-  appChatRagRoute: appChatRagRoute,
-  appChatIndexRoute: appChatIndexRoute,
-  appComplainceAndVerificationIndexRoute:
-    appComplainceAndVerificationIndexRoute,
+  appCandidatesCandidateIdLayoutRoute:
+    appCandidatesCandidateIdLayoutRouteWithChildren,
+  appCandidatesBulkUploadRoute: appCandidatesBulkUploadRoute,
+  appTokensSuccessRoute: appTokensSuccessRoute,
+  appCandidatesIndexRoute: appCandidatesIndexRoute,
+  appInvoicesIndexRoute: appInvoicesIndexRoute,
   appProfileIndexRoute: appProfileIndexRoute,
-  appSettingsIndexRoute: appSettingsIndexRoute,
+  appTokensIndexRoute: appTokensIndexRoute,
 }
 
 const appLayoutRouteWithChildren = appLayoutRoute._addFileChildren(
@@ -289,24 +281,13 @@ const appLayoutRouteWithChildren = appLayoutRoute._addFileChildren(
 )
 
 interface authLayoutRouteChildren {
-  authForgotPasswordRoute: typeof authForgotPasswordRoute
   authLoginRoute: typeof authLoginRoute
   authRegisterRoute: typeof authRegisterRoute
-  authResetPasswordRoute: typeof authResetPasswordRoute
-  authTwoFactorOtpRoute: typeof authTwoFactorOtpRoute
-  authTwoFactorIndexRoute: typeof authTwoFactorIndexRoute
-  authAcceptInvitationInvitationIdIndexRoute: typeof authAcceptInvitationInvitationIdIndexRoute
 }
 
 const authLayoutRouteChildren: authLayoutRouteChildren = {
-  authForgotPasswordRoute: authForgotPasswordRoute,
   authLoginRoute: authLoginRoute,
   authRegisterRoute: authRegisterRoute,
-  authResetPasswordRoute: authResetPasswordRoute,
-  authTwoFactorOtpRoute: authTwoFactorOtpRoute,
-  authTwoFactorIndexRoute: authTwoFactorIndexRoute,
-  authAcceptInvitationInvitationIdIndexRoute:
-    authAcceptInvitationInvitationIdIndexRoute,
 }
 
 const authLayoutRouteWithChildren = authLayoutRoute._addFileChildren(
@@ -315,115 +296,103 @@ const authLayoutRouteWithChildren = authLayoutRoute._addFileChildren(
 
 export interface FileRoutesByFullPath {
   '/': typeof appIndexRoute
-  '/test': typeof appTestRoute
   '/welcome': typeof appWelcomeRoute
-  '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
-  '/reset-password': typeof authResetPasswordRoute
-  '/chat/rag': typeof appChatRagRoute
-  '/two-factor/otp': typeof authTwoFactorOtpRoute
-  '/chat': typeof appChatIndexRoute
-  '/complaince-and-verification': typeof appComplainceAndVerificationIndexRoute
+  '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
+  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/tokens/success': typeof appTokensSuccessRoute
+  '/candidates': typeof appCandidatesIndexRoute
+  '/invoices': typeof appInvoicesIndexRoute
   '/profile': typeof appProfileIndexRoute
-  '/settings': typeof appSettingsIndexRoute
-  '/two-factor': typeof authTwoFactorIndexRoute
-  '/accept-invitation/$invitationId': typeof authAcceptInvitationInvitationIdIndexRoute
+  '/tokens': typeof appTokensIndexRoute
+  '/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
+  '/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof appIndexRoute
-  '/test': typeof appTestRoute
   '/welcome': typeof appWelcomeRoute
-  '/forgot-password': typeof authForgotPasswordRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
-  '/reset-password': typeof authResetPasswordRoute
-  '/chat/rag': typeof appChatRagRoute
-  '/two-factor/otp': typeof authTwoFactorOtpRoute
-  '/chat': typeof appChatIndexRoute
-  '/complaince-and-verification': typeof appComplainceAndVerificationIndexRoute
+  '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
+  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/tokens/success': typeof appTokensSuccessRoute
+  '/candidates': typeof appCandidatesIndexRoute
+  '/invoices': typeof appInvoicesIndexRoute
   '/profile': typeof appProfileIndexRoute
-  '/settings': typeof appSettingsIndexRoute
-  '/two-factor': typeof authTwoFactorIndexRoute
-  '/accept-invitation/$invitationId': typeof authAcceptInvitationInvitationIdIndexRoute
+  '/tokens': typeof appTokensIndexRoute
+  '/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
+  '/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/(app)': typeof appLayoutRouteWithChildren
   '/(auth)': typeof authLayoutRouteWithChildren
-  '/(app)/test': typeof appTestRoute
   '/(app)/welcome': typeof appWelcomeRoute
-  '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/register': typeof authRegisterRoute
-  '/(auth)/reset-password': typeof authResetPasswordRoute
   '/(app)/': typeof appIndexRoute
-  '/(app)/chat/rag': typeof appChatRagRoute
-  '/(auth)/two-factor/otp': typeof authTwoFactorOtpRoute
-  '/(app)/chat/': typeof appChatIndexRoute
-  '/(app)/complaince-and-verification/': typeof appComplainceAndVerificationIndexRoute
+  '/(app)/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
+  '/(app)/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/(app)/tokens/success': typeof appTokensSuccessRoute
+  '/(app)/candidates/': typeof appCandidatesIndexRoute
+  '/(app)/invoices/': typeof appInvoicesIndexRoute
   '/(app)/profile/': typeof appProfileIndexRoute
-  '/(app)/settings/': typeof appSettingsIndexRoute
-  '/(auth)/two-factor/': typeof authTwoFactorIndexRoute
-  '/(auth)/accept-invitation/$invitationId/': typeof authAcceptInvitationInvitationIdIndexRoute
+  '/(app)/tokens/': typeof appTokensIndexRoute
+  '/(app)/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
+  '/(app)/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/test'
     | '/welcome'
-    | '/forgot-password'
     | '/login'
     | '/register'
-    | '/reset-password'
-    | '/chat/rag'
-    | '/two-factor/otp'
-    | '/chat'
-    | '/complaince-and-verification'
+    | '/candidates/$candidateId'
+    | '/candidates/bulk-upload'
+    | '/tokens/success'
+    | '/candidates'
+    | '/invoices'
     | '/profile'
-    | '/settings'
-    | '/two-factor'
-    | '/accept-invitation/$invitationId'
+    | '/tokens'
+    | '/candidates/$candidateId/matching-criteria'
+    | '/candidates/$candidateId/profile'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/test'
     | '/welcome'
-    | '/forgot-password'
     | '/login'
     | '/register'
-    | '/reset-password'
-    | '/chat/rag'
-    | '/two-factor/otp'
-    | '/chat'
-    | '/complaince-and-verification'
+    | '/candidates/$candidateId'
+    | '/candidates/bulk-upload'
+    | '/tokens/success'
+    | '/candidates'
+    | '/invoices'
     | '/profile'
-    | '/settings'
-    | '/two-factor'
-    | '/accept-invitation/$invitationId'
+    | '/tokens'
+    | '/candidates/$candidateId/matching-criteria'
+    | '/candidates/$candidateId/profile'
   id:
     | '__root__'
     | '/(app)'
     | '/(auth)'
-    | '/(app)/test'
     | '/(app)/welcome'
-    | '/(auth)/forgot-password'
     | '/(auth)/login'
     | '/(auth)/register'
-    | '/(auth)/reset-password'
     | '/(app)/'
-    | '/(app)/chat/rag'
-    | '/(auth)/two-factor/otp'
-    | '/(app)/chat/'
-    | '/(app)/complaince-and-verification/'
+    | '/(app)/candidates/$candidateId'
+    | '/(app)/candidates/bulk-upload'
+    | '/(app)/tokens/success'
+    | '/(app)/candidates/'
+    | '/(app)/invoices/'
     | '/(app)/profile/'
-    | '/(app)/settings/'
-    | '/(auth)/two-factor/'
-    | '/(auth)/accept-invitation/$invitationId/'
+    | '/(app)/tokens/'
+    | '/(app)/candidates/$candidateId/matching-criteria'
+    | '/(app)/candidates/$candidateId/profile'
   fileRoutesById: FileRoutesById
 }
 
@@ -454,39 +423,27 @@ export const routeTree = rootRoute
     "/(app)": {
       "filePath": "(app)/layout.tsx",
       "children": [
-        "/(app)/test",
         "/(app)/welcome",
         "/(app)/",
-        "/(app)/chat/rag",
-        "/(app)/chat/",
-        "/(app)/complaince-and-verification/",
+        "/(app)/candidates/$candidateId",
+        "/(app)/candidates/bulk-upload",
+        "/(app)/tokens/success",
+        "/(app)/candidates/",
+        "/(app)/invoices/",
         "/(app)/profile/",
-        "/(app)/settings/"
+        "/(app)/tokens/"
       ]
     },
     "/(auth)": {
       "filePath": "(auth)/layout.tsx",
       "children": [
-        "/(auth)/forgot-password",
         "/(auth)/login",
-        "/(auth)/register",
-        "/(auth)/reset-password",
-        "/(auth)/two-factor/otp",
-        "/(auth)/two-factor/",
-        "/(auth)/accept-invitation/$invitationId/"
+        "/(auth)/register"
       ]
-    },
-    "/(app)/test": {
-      "filePath": "(app)/test.tsx",
-      "parent": "/(app)"
     },
     "/(app)/welcome": {
       "filePath": "(app)/welcome.tsx",
       "parent": "/(app)"
-    },
-    "/(auth)/forgot-password": {
-      "filePath": "(auth)/forgot-password.tsx",
-      "parent": "/(auth)"
     },
     "/(auth)/login": {
       "filePath": "(auth)/login.tsx",
@@ -496,45 +453,49 @@ export const routeTree = rootRoute
       "filePath": "(auth)/register.tsx",
       "parent": "/(auth)"
     },
-    "/(auth)/reset-password": {
-      "filePath": "(auth)/reset-password.tsx",
-      "parent": "/(auth)"
-    },
     "/(app)/": {
       "filePath": "(app)/index.tsx",
       "parent": "/(app)"
     },
-    "/(app)/chat/rag": {
-      "filePath": "(app)/chat/rag.tsx",
+    "/(app)/candidates/$candidateId": {
+      "filePath": "(app)/candidates/$candidateId/layout.tsx",
+      "parent": "/(app)",
+      "children": [
+        "/(app)/candidates/$candidateId/matching-criteria",
+        "/(app)/candidates/$candidateId/profile"
+      ]
+    },
+    "/(app)/candidates/bulk-upload": {
+      "filePath": "(app)/candidates/bulk-upload.tsx",
       "parent": "/(app)"
     },
-    "/(auth)/two-factor/otp": {
-      "filePath": "(auth)/two-factor/otp.tsx",
-      "parent": "/(auth)"
-    },
-    "/(app)/chat/": {
-      "filePath": "(app)/chat/index.tsx",
+    "/(app)/tokens/success": {
+      "filePath": "(app)/tokens/success.tsx",
       "parent": "/(app)"
     },
-    "/(app)/complaince-and-verification/": {
-      "filePath": "(app)/complaince-and-verification/index.tsx",
+    "/(app)/candidates/": {
+      "filePath": "(app)/candidates/index.tsx",
+      "parent": "/(app)"
+    },
+    "/(app)/invoices/": {
+      "filePath": "(app)/invoices/index.tsx",
       "parent": "/(app)"
     },
     "/(app)/profile/": {
       "filePath": "(app)/profile/index.tsx",
       "parent": "/(app)"
     },
-    "/(app)/settings/": {
-      "filePath": "(app)/settings/index.tsx",
+    "/(app)/tokens/": {
+      "filePath": "(app)/tokens/index.tsx",
       "parent": "/(app)"
     },
-    "/(auth)/two-factor/": {
-      "filePath": "(auth)/two-factor/index.tsx",
-      "parent": "/(auth)"
+    "/(app)/candidates/$candidateId/matching-criteria": {
+      "filePath": "(app)/candidates/$candidateId/matching-criteria.tsx",
+      "parent": "/(app)/candidates/$candidateId"
     },
-    "/(auth)/accept-invitation/$invitationId/": {
-      "filePath": "(auth)/accept-invitation/$invitationId/index.tsx",
-      "parent": "/(auth)"
+    "/(app)/candidates/$candidateId/profile": {
+      "filePath": "(app)/candidates/$candidateId/profile.tsx",
+      "parent": "/(app)/candidates/$candidateId"
     }
   }
 }

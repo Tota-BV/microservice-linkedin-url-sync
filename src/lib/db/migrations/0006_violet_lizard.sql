@@ -1,0 +1,1 @@
+ALTER TABLE "agencies_profile" ADD COLUMN "references_and_projects" json DEFAULT '[]'::json NOT NULL;

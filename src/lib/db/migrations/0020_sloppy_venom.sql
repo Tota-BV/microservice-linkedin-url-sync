@@ -1,1 +1,0 @@
-ALTER TABLE "agency_documents" RENAME COLUMN "status" TO "verificationStatus";

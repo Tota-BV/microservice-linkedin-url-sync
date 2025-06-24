@@ -24,11 +24,9 @@ import type { UpdateAgencyProfile } from "../model/schema";
 export function Skills() {
   const { profile } = useLoaderData({ from: "/(app)/profile/" });
 
-  console.log(profile);
-
   return (
     <Card>
-      <CardHeader className="flex justify-between items-center">
+      <CardHeader className="flex items-center justify-between">
         <CardTitle className="flex justify-between">Skills</CardTitle>
         <EditSkills>
           <Button variant="icon" size="icon">
@@ -38,7 +36,7 @@ export function Skills() {
       </CardHeader>
       <CardContent>
         <div className="flex gap-1">
-          {(profile?.skills as Record<"value", string>[]).map((item) => (
+          {profile?.skills.map((item) => (
             <Badge variant="secondary" key={item.value}>
               {item.value}
             </Badge>
@@ -56,7 +54,7 @@ function EditSkills({ children }: React.PropsWithChildren) {
   const router = useRouter();
 
   const trpc = useTRPC();
-  const update = useMutation(trpc.agency.updateProfile.mutationOptions());
+  const update = useMutation(trpc.agency.update.mutationOptions());
   const form = useForm<UpdateAgencyProfile>({
     defaultValues: {
       skills: profile?.skills ?? [],
@@ -117,15 +115,17 @@ function EditSkills({ children }: React.PropsWithChildren) {
                 );
               })}
               <input
-                className="outline-none bg-transparent"
+                className="bg-transparent outline-none"
+                // biome-ignore lint/a11y/noAutofocus: <explanation>
                 autoFocus
                 onKeyDown={(e) => {
-                  const value = e.target.value;
+                  const value = (e.target as unknown as { value: string })
+                    .value;
 
                   if (e.key === "Enter" || e.key === ",") {
                     e.preventDefault();
                     append({ value });
-                    e.target.value = "";
+                    (e.target as unknown as { value: string }).value = "";
                   }
                   if (e.key === "Backspace" && value.length === 0) {
                     e.preventDefault();

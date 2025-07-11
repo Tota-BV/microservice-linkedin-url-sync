@@ -1,1 +1,0 @@
-ALTER TABLE "candidates" ADD COLUMN "hours_per_week" numeric;

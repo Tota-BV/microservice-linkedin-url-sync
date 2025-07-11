@@ -1,10 +1,8 @@
 version: "3"
 services:
   db:
-    # image: postgres
     image: ankane/pgvector
     restart: always
-    # set shared memory limit when using docker compose
     shm_size: 128mb
     ports:
       - 5432:5432
@@ -26,11 +24,17 @@ services:
       - tota
 
   mail:
-    container_name: inbucket
-    image: inbucket/inbucket:latest
+    image: axllent/mailpit
+    container_name: mailpit
+    restart: unless-stopped
     ports:
-      - "2500:2500"
       - "9000:9000"
+      - "2500:1025"
+    environment:
+      MP_UI_BIND_ADDR: :9000
+      MP_MAX_MESSAGES: 5000
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
 volumes:
   pgdata:

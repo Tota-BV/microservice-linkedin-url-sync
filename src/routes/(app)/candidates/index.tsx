@@ -17,25 +17,15 @@ function CandidatesPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Candidates</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="font-bold text-3xl">Candidates</h1>
       </div>
 
-      {/* Actions Bar */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex gap-2">
-          {/* <Button variant="outline">
-            <MoreHorizontalIcon className="w-4 h-4 mr-2" />
-            Actions
-          </Button> */}
           <div className="relative">
             <SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-gray-400" />
-            <Input
-              placeholder="Search candidates..."
-              // value={searchQuery}
-              // onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-64"
-            />
+            <Input placeholder="Search candidates..." className="w-64 pl-10" />
           </div>
         </div>
         <div className="flex gap-2">

@@ -1,1 +1,0 @@
-ALTER TABLE "agencies_profile" ALTER COLUMN "references_and_projects" SET DEFAULT '{}';

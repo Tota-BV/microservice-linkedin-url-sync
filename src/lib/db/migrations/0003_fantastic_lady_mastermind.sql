@@ -1,0 +1,1 @@
+ALTER TABLE "skills" RENAME COLUMN "skillType" TO "skill_type";

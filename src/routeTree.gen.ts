@@ -8,231 +8,388 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-// Import Routes
+import { createServerRootRoute } from '@tanstack/react-start/server'
 
-import { Route as rootRoute } from './routes/__root'
-import { Route as authLayoutImport } from './routes/(auth)/layout'
-import { Route as appLayoutImport } from './routes/(app)/layout'
-import { Route as appIndexImport } from './routes/(app)/index'
-import { Route as authRegisterImport } from './routes/(auth)/register'
-import { Route as authLoginImport } from './routes/(auth)/login'
-import { Route as appWelcomeImport } from './routes/(app)/welcome'
-import { Route as appTokensIndexImport } from './routes/(app)/tokens/index'
-import { Route as appProfileIndexImport } from './routes/(app)/profile/index'
-import { Route as appInvoicesIndexImport } from './routes/(app)/invoices/index'
-import { Route as appCandidatesIndexImport } from './routes/(app)/candidates/index'
-import { Route as appTokensSuccessImport } from './routes/(app)/tokens/success'
-import { Route as appCandidatesBulkUploadImport } from './routes/(app)/candidates/bulk-upload'
-import { Route as appCandidatesCandidateIdLayoutImport } from './routes/(app)/candidates/$candidateId/layout'
-import { Route as appCandidatesCandidateIdProfileImport } from './routes/(app)/candidates/$candidateId/profile'
-import { Route as appCandidatesCandidateIdMatchingCriteriaImport } from './routes/(app)/candidates/$candidateId/matching-criteria'
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as authLayoutRouteImport } from './routes/(auth)/layout'
+import { Route as appLayoutRouteImport } from './routes/(app)/layout'
+import { Route as appIndexRouteImport } from './routes/(app)/index'
+import { Route as authRegisterRouteImport } from './routes/(auth)/register'
+import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as appWelcomeRouteImport } from './routes/(app)/welcome'
+import { Route as appTokensIndexRouteImport } from './routes/(app)/tokens/index'
+import { Route as appProfileIndexRouteImport } from './routes/(app)/profile/index'
+import { Route as appInvoicesIndexRouteImport } from './routes/(app)/invoices/index'
+import { Route as appCandidatesIndexRouteImport } from './routes/(app)/candidates/index'
+import { Route as appTokensSuccessRouteImport } from './routes/(app)/tokens/success'
+import { Route as appCandidatesBulkUploadRouteImport } from './routes/(app)/candidates/bulk-upload'
+import { Route as appCandidatesCandidateIdLayoutRouteImport } from './routes/(app)/candidates/$candidateId/layout'
+import { Route as appCandidatesCandidateIdProfileRouteImport } from './routes/(app)/candidates/$candidateId/profile'
+import { Route as appCandidatesCandidateIdMatchingCriteriaRouteImport } from './routes/(app)/candidates/$candidateId/matching-criteria'
+import { ServerRoute as ApiStripeWebhookServerRouteImport } from './routes/api/stripe-webhook'
+import { ServerRoute as ApiTrpcSplatServerRouteImport } from './routes/api/trpc.$'
+import { ServerRoute as ApiAuthSplatServerRouteImport } from './routes/api/auth.$'
 
-// Create/Update Routes
+const rootServerRouteImport = createServerRootRoute()
 
-const authLayoutRoute = authLayoutImport.update({
+const authLayoutRoute = authLayoutRouteImport.update({
   id: '/(auth)',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const appLayoutRoute = appLayoutImport.update({
+const appLayoutRoute = appLayoutRouteImport.update({
   id: '/(app)',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-
-const appIndexRoute = appIndexImport.update({
+const appIndexRoute = appIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
-const authRegisterRoute = authRegisterImport.update({
+const authRegisterRoute = authRegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => authLayoutRoute,
 } as any)
-
-const authLoginRoute = authLoginImport.update({
+const authLoginRoute = authLoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => authLayoutRoute,
 } as any)
-
-const appWelcomeRoute = appWelcomeImport.update({
+const appWelcomeRoute = appWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
-const appTokensIndexRoute = appTokensIndexImport.update({
+const appTokensIndexRoute = appTokensIndexRouteImport.update({
   id: '/tokens/',
   path: '/tokens/',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
-const appProfileIndexRoute = appProfileIndexImport.update({
+const appProfileIndexRoute = appProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
-const appInvoicesIndexRoute = appInvoicesIndexImport.update({
+const appInvoicesIndexRoute = appInvoicesIndexRouteImport.update({
   id: '/invoices/',
   path: '/invoices/',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
-const appCandidatesIndexRoute = appCandidatesIndexImport.update({
+const appCandidatesIndexRoute = appCandidatesIndexRouteImport.update({
   id: '/candidates/',
   path: '/candidates/',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
-const appTokensSuccessRoute = appTokensSuccessImport.update({
+const appTokensSuccessRoute = appTokensSuccessRouteImport.update({
   id: '/tokens/success',
   path: '/tokens/success',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
-const appCandidatesBulkUploadRoute = appCandidatesBulkUploadImport.update({
+const appCandidatesBulkUploadRoute = appCandidatesBulkUploadRouteImport.update({
   id: '/candidates/bulk-upload',
   path: '/candidates/bulk-upload',
   getParentRoute: () => appLayoutRoute,
 } as any)
-
 const appCandidatesCandidateIdLayoutRoute =
-  appCandidatesCandidateIdLayoutImport.update({
+  appCandidatesCandidateIdLayoutRouteImport.update({
     id: '/candidates/$candidateId',
     path: '/candidates/$candidateId',
     getParentRoute: () => appLayoutRoute,
   } as any)
-
 const appCandidatesCandidateIdProfileRoute =
-  appCandidatesCandidateIdProfileImport.update({
+  appCandidatesCandidateIdProfileRouteImport.update({
     id: '/profile',
     path: '/profile',
     getParentRoute: () => appCandidatesCandidateIdLayoutRoute,
   } as any)
-
 const appCandidatesCandidateIdMatchingCriteriaRoute =
-  appCandidatesCandidateIdMatchingCriteriaImport.update({
+  appCandidatesCandidateIdMatchingCriteriaRouteImport.update({
     id: '/matching-criteria',
     path: '/matching-criteria',
     getParentRoute: () => appCandidatesCandidateIdLayoutRoute,
   } as any)
+const ApiStripeWebhookServerRoute = ApiStripeWebhookServerRouteImport.update({
+  id: '/api/stripe-webhook',
+  path: '/api/stripe-webhook',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiTrpcSplatServerRoute = ApiTrpcSplatServerRouteImport.update({
+  id: '/api/trpc/$',
+  path: '/api/trpc/$',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
+const ApiAuthSplatServerRoute = ApiAuthSplatServerRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootServerRouteImport,
+} as any)
 
-// Populate the FileRoutesByPath interface
+export interface FileRoutesByFullPath {
+  '/': typeof appIndexRoute
+  '/welcome': typeof appWelcomeRoute
+  '/login': typeof authLoginRoute
+  '/register': typeof authRegisterRoute
+  '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
+  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/tokens/success': typeof appTokensSuccessRoute
+  '/candidates': typeof appCandidatesIndexRoute
+  '/invoices': typeof appInvoicesIndexRoute
+  '/profile': typeof appProfileIndexRoute
+  '/tokens': typeof appTokensIndexRoute
+  '/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
+  '/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof appIndexRoute
+  '/welcome': typeof appWelcomeRoute
+  '/login': typeof authLoginRoute
+  '/register': typeof authRegisterRoute
+  '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
+  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/tokens/success': typeof appTokensSuccessRoute
+  '/candidates': typeof appCandidatesIndexRoute
+  '/invoices': typeof appInvoicesIndexRoute
+  '/profile': typeof appProfileIndexRoute
+  '/tokens': typeof appTokensIndexRoute
+  '/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
+  '/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/(app)': typeof appLayoutRouteWithChildren
+  '/(auth)': typeof authLayoutRouteWithChildren
+  '/(app)/welcome': typeof appWelcomeRoute
+  '/(auth)/login': typeof authLoginRoute
+  '/(auth)/register': typeof authRegisterRoute
+  '/(app)/': typeof appIndexRoute
+  '/(app)/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
+  '/(app)/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/(app)/tokens/success': typeof appTokensSuccessRoute
+  '/(app)/candidates/': typeof appCandidatesIndexRoute
+  '/(app)/invoices/': typeof appInvoicesIndexRoute
+  '/(app)/profile/': typeof appProfileIndexRoute
+  '/(app)/tokens/': typeof appTokensIndexRoute
+  '/(app)/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
+  '/(app)/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/welcome'
+    | '/login'
+    | '/register'
+    | '/candidates/$candidateId'
+    | '/candidates/bulk-upload'
+    | '/tokens/success'
+    | '/candidates'
+    | '/invoices'
+    | '/profile'
+    | '/tokens'
+    | '/candidates/$candidateId/matching-criteria'
+    | '/candidates/$candidateId/profile'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/welcome'
+    | '/login'
+    | '/register'
+    | '/candidates/$candidateId'
+    | '/candidates/bulk-upload'
+    | '/tokens/success'
+    | '/candidates'
+    | '/invoices'
+    | '/profile'
+    | '/tokens'
+    | '/candidates/$candidateId/matching-criteria'
+    | '/candidates/$candidateId/profile'
+  id:
+    | '__root__'
+    | '/(app)'
+    | '/(auth)'
+    | '/(app)/welcome'
+    | '/(auth)/login'
+    | '/(auth)/register'
+    | '/(app)/'
+    | '/(app)/candidates/$candidateId'
+    | '/(app)/candidates/bulk-upload'
+    | '/(app)/tokens/success'
+    | '/(app)/candidates/'
+    | '/(app)/invoices/'
+    | '/(app)/profile/'
+    | '/(app)/tokens/'
+    | '/(app)/candidates/$candidateId/matching-criteria'
+    | '/(app)/candidates/$candidateId/profile'
+  fileRoutesById: FileRoutesById
+}
+export interface RootRouteChildren {
+  appLayoutRoute: typeof appLayoutRouteWithChildren
+  authLayoutRoute: typeof authLayoutRouteWithChildren
+}
+export interface FileServerRoutesByFullPath {
+  '/api/stripe-webhook': typeof ApiStripeWebhookServerRoute
+  '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/trpc/$': typeof ApiTrpcSplatServerRoute
+}
+export interface FileServerRoutesByTo {
+  '/api/stripe-webhook': typeof ApiStripeWebhookServerRoute
+  '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/trpc/$': typeof ApiTrpcSplatServerRoute
+}
+export interface FileServerRoutesById {
+  __root__: typeof rootServerRouteImport
+  '/api/stripe-webhook': typeof ApiStripeWebhookServerRoute
+  '/api/auth/$': typeof ApiAuthSplatServerRoute
+  '/api/trpc/$': typeof ApiTrpcSplatServerRoute
+}
+export interface FileServerRouteTypes {
+  fileServerRoutesByFullPath: FileServerRoutesByFullPath
+  fullPaths: '/api/stripe-webhook' | '/api/auth/$' | '/api/trpc/$'
+  fileServerRoutesByTo: FileServerRoutesByTo
+  to: '/api/stripe-webhook' | '/api/auth/$' | '/api/trpc/$'
+  id: '__root__' | '/api/stripe-webhook' | '/api/auth/$' | '/api/trpc/$'
+  fileServerRoutesById: FileServerRoutesById
+}
+export interface RootServerRouteChildren {
+  ApiStripeWebhookServerRoute: typeof ApiStripeWebhookServerRoute
+  ApiAuthSplatServerRoute: typeof ApiAuthSplatServerRoute
+  ApiTrpcSplatServerRoute: typeof ApiTrpcSplatServerRoute
+}
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/(app)': {
-      id: '/(app)'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof appLayoutImport
-      parentRoute: typeof rootRoute
-    }
     '/(auth)': {
       id: '/(auth)'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof authLayoutImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof authLayoutRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/(app)/welcome': {
-      id: '/(app)/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof appWelcomeImport
-      parentRoute: typeof appLayoutImport
-    }
-    '/(auth)/login': {
-      id: '/(auth)/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof authLoginImport
-      parentRoute: typeof authLayoutImport
-    }
-    '/(auth)/register': {
-      id: '/(auth)/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof authRegisterImport
-      parentRoute: typeof authLayoutImport
+    '/(app)': {
+      id: '/(app)'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof appLayoutRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/(app)/': {
       id: '/(app)/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof appIndexImport
-      parentRoute: typeof appLayoutImport
+      preLoaderRoute: typeof appIndexRouteImport
+      parentRoute: typeof appLayoutRoute
     }
-    '/(app)/candidates/$candidateId': {
-      id: '/(app)/candidates/$candidateId'
-      path: '/candidates/$candidateId'
-      fullPath: '/candidates/$candidateId'
-      preLoaderRoute: typeof appCandidatesCandidateIdLayoutImport
-      parentRoute: typeof appLayoutImport
+    '/(auth)/register': {
+      id: '/(auth)/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof authRegisterRouteImport
+      parentRoute: typeof authLayoutRoute
     }
-    '/(app)/candidates/bulk-upload': {
-      id: '/(app)/candidates/bulk-upload'
-      path: '/candidates/bulk-upload'
-      fullPath: '/candidates/bulk-upload'
-      preLoaderRoute: typeof appCandidatesBulkUploadImport
-      parentRoute: typeof appLayoutImport
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginRouteImport
+      parentRoute: typeof authLayoutRoute
     }
-    '/(app)/tokens/success': {
-      id: '/(app)/tokens/success'
-      path: '/tokens/success'
-      fullPath: '/tokens/success'
-      preLoaderRoute: typeof appTokensSuccessImport
-      parentRoute: typeof appLayoutImport
-    }
-    '/(app)/candidates/': {
-      id: '/(app)/candidates/'
-      path: '/candidates'
-      fullPath: '/candidates'
-      preLoaderRoute: typeof appCandidatesIndexImport
-      parentRoute: typeof appLayoutImport
-    }
-    '/(app)/invoices/': {
-      id: '/(app)/invoices/'
-      path: '/invoices'
-      fullPath: '/invoices'
-      preLoaderRoute: typeof appInvoicesIndexImport
-      parentRoute: typeof appLayoutImport
-    }
-    '/(app)/profile/': {
-      id: '/(app)/profile/'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof appProfileIndexImport
-      parentRoute: typeof appLayoutImport
+    '/(app)/welcome': {
+      id: '/(app)/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof appWelcomeRouteImport
+      parentRoute: typeof appLayoutRoute
     }
     '/(app)/tokens/': {
       id: '/(app)/tokens/'
       path: '/tokens'
       fullPath: '/tokens'
-      preLoaderRoute: typeof appTokensIndexImport
-      parentRoute: typeof appLayoutImport
+      preLoaderRoute: typeof appTokensIndexRouteImport
+      parentRoute: typeof appLayoutRoute
     }
-    '/(app)/candidates/$candidateId/matching-criteria': {
-      id: '/(app)/candidates/$candidateId/matching-criteria'
-      path: '/matching-criteria'
-      fullPath: '/candidates/$candidateId/matching-criteria'
-      preLoaderRoute: typeof appCandidatesCandidateIdMatchingCriteriaImport
-      parentRoute: typeof appCandidatesCandidateIdLayoutImport
+    '/(app)/profile/': {
+      id: '/(app)/profile/'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof appProfileIndexRouteImport
+      parentRoute: typeof appLayoutRoute
+    }
+    '/(app)/invoices/': {
+      id: '/(app)/invoices/'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof appInvoicesIndexRouteImport
+      parentRoute: typeof appLayoutRoute
+    }
+    '/(app)/candidates/': {
+      id: '/(app)/candidates/'
+      path: '/candidates'
+      fullPath: '/candidates'
+      preLoaderRoute: typeof appCandidatesIndexRouteImport
+      parentRoute: typeof appLayoutRoute
+    }
+    '/(app)/tokens/success': {
+      id: '/(app)/tokens/success'
+      path: '/tokens/success'
+      fullPath: '/tokens/success'
+      preLoaderRoute: typeof appTokensSuccessRouteImport
+      parentRoute: typeof appLayoutRoute
+    }
+    '/(app)/candidates/bulk-upload': {
+      id: '/(app)/candidates/bulk-upload'
+      path: '/candidates/bulk-upload'
+      fullPath: '/candidates/bulk-upload'
+      preLoaderRoute: typeof appCandidatesBulkUploadRouteImport
+      parentRoute: typeof appLayoutRoute
+    }
+    '/(app)/candidates/$candidateId': {
+      id: '/(app)/candidates/$candidateId'
+      path: '/candidates/$candidateId'
+      fullPath: '/candidates/$candidateId'
+      preLoaderRoute: typeof appCandidatesCandidateIdLayoutRouteImport
+      parentRoute: typeof appLayoutRoute
     }
     '/(app)/candidates/$candidateId/profile': {
       id: '/(app)/candidates/$candidateId/profile'
       path: '/profile'
       fullPath: '/candidates/$candidateId/profile'
-      preLoaderRoute: typeof appCandidatesCandidateIdProfileImport
-      parentRoute: typeof appCandidatesCandidateIdLayoutImport
+      preLoaderRoute: typeof appCandidatesCandidateIdProfileRouteImport
+      parentRoute: typeof appCandidatesCandidateIdLayoutRoute
+    }
+    '/(app)/candidates/$candidateId/matching-criteria': {
+      id: '/(app)/candidates/$candidateId/matching-criteria'
+      path: '/matching-criteria'
+      fullPath: '/candidates/$candidateId/matching-criteria'
+      preLoaderRoute: typeof appCandidatesCandidateIdMatchingCriteriaRouteImport
+      parentRoute: typeof appCandidatesCandidateIdLayoutRoute
     }
   }
 }
-
-// Create and export the route tree
+declare module '@tanstack/react-start/server' {
+  interface ServerFileRoutesByPath {
+    '/api/stripe-webhook': {
+      id: '/api/stripe-webhook'
+      path: '/api/stripe-webhook'
+      fullPath: '/api/stripe-webhook'
+      preLoaderRoute: typeof ApiStripeWebhookServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/trpc/$': {
+      id: '/api/trpc/$'
+      path: '/api/trpc/$'
+      fullPath: '/api/trpc/$'
+      preLoaderRoute: typeof ApiTrpcSplatServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatServerRouteImport
+      parentRoute: typeof rootServerRouteImport
+    }
+  }
+}
 
 interface appCandidatesCandidateIdLayoutRouteChildren {
   appCandidatesCandidateIdMatchingCriteriaRoute: typeof appCandidatesCandidateIdMatchingCriteriaRoute
@@ -294,209 +451,18 @@ const authLayoutRouteWithChildren = authLayoutRoute._addFileChildren(
   authLayoutRouteChildren,
 )
 
-export interface FileRoutesByFullPath {
-  '/': typeof appIndexRoute
-  '/welcome': typeof appWelcomeRoute
-  '/login': typeof authLoginRoute
-  '/register': typeof authRegisterRoute
-  '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
-  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
-  '/tokens/success': typeof appTokensSuccessRoute
-  '/candidates': typeof appCandidatesIndexRoute
-  '/invoices': typeof appInvoicesIndexRoute
-  '/profile': typeof appProfileIndexRoute
-  '/tokens': typeof appTokensIndexRoute
-  '/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
-  '/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
-}
-
-export interface FileRoutesByTo {
-  '/': typeof appIndexRoute
-  '/welcome': typeof appWelcomeRoute
-  '/login': typeof authLoginRoute
-  '/register': typeof authRegisterRoute
-  '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
-  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
-  '/tokens/success': typeof appTokensSuccessRoute
-  '/candidates': typeof appCandidatesIndexRoute
-  '/invoices': typeof appInvoicesIndexRoute
-  '/profile': typeof appProfileIndexRoute
-  '/tokens': typeof appTokensIndexRoute
-  '/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
-  '/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
-}
-
-export interface FileRoutesById {
-  __root__: typeof rootRoute
-  '/(app)': typeof appLayoutRouteWithChildren
-  '/(auth)': typeof authLayoutRouteWithChildren
-  '/(app)/welcome': typeof appWelcomeRoute
-  '/(auth)/login': typeof authLoginRoute
-  '/(auth)/register': typeof authRegisterRoute
-  '/(app)/': typeof appIndexRoute
-  '/(app)/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
-  '/(app)/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
-  '/(app)/tokens/success': typeof appTokensSuccessRoute
-  '/(app)/candidates/': typeof appCandidatesIndexRoute
-  '/(app)/invoices/': typeof appInvoicesIndexRoute
-  '/(app)/profile/': typeof appProfileIndexRoute
-  '/(app)/tokens/': typeof appTokensIndexRoute
-  '/(app)/candidates/$candidateId/matching-criteria': typeof appCandidatesCandidateIdMatchingCriteriaRoute
-  '/(app)/candidates/$candidateId/profile': typeof appCandidatesCandidateIdProfileRoute
-}
-
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/welcome'
-    | '/login'
-    | '/register'
-    | '/candidates/$candidateId'
-    | '/candidates/bulk-upload'
-    | '/tokens/success'
-    | '/candidates'
-    | '/invoices'
-    | '/profile'
-    | '/tokens'
-    | '/candidates/$candidateId/matching-criteria'
-    | '/candidates/$candidateId/profile'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/welcome'
-    | '/login'
-    | '/register'
-    | '/candidates/$candidateId'
-    | '/candidates/bulk-upload'
-    | '/tokens/success'
-    | '/candidates'
-    | '/invoices'
-    | '/profile'
-    | '/tokens'
-    | '/candidates/$candidateId/matching-criteria'
-    | '/candidates/$candidateId/profile'
-  id:
-    | '__root__'
-    | '/(app)'
-    | '/(auth)'
-    | '/(app)/welcome'
-    | '/(auth)/login'
-    | '/(auth)/register'
-    | '/(app)/'
-    | '/(app)/candidates/$candidateId'
-    | '/(app)/candidates/bulk-upload'
-    | '/(app)/tokens/success'
-    | '/(app)/candidates/'
-    | '/(app)/invoices/'
-    | '/(app)/profile/'
-    | '/(app)/tokens/'
-    | '/(app)/candidates/$candidateId/matching-criteria'
-    | '/(app)/candidates/$candidateId/profile'
-  fileRoutesById: FileRoutesById
-}
-
-export interface RootRouteChildren {
-  appLayoutRoute: typeof appLayoutRouteWithChildren
-  authLayoutRoute: typeof authLayoutRouteWithChildren
-}
-
 const rootRouteChildren: RootRouteChildren = {
   appLayoutRoute: appLayoutRouteWithChildren,
   authLayoutRoute: authLayoutRouteWithChildren,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/(app)",
-        "/(auth)"
-      ]
-    },
-    "/(app)": {
-      "filePath": "(app)/layout.tsx",
-      "children": [
-        "/(app)/welcome",
-        "/(app)/",
-        "/(app)/candidates/$candidateId",
-        "/(app)/candidates/bulk-upload",
-        "/(app)/tokens/success",
-        "/(app)/candidates/",
-        "/(app)/invoices/",
-        "/(app)/profile/",
-        "/(app)/tokens/"
-      ]
-    },
-    "/(auth)": {
-      "filePath": "(auth)/layout.tsx",
-      "children": [
-        "/(auth)/login",
-        "/(auth)/register"
-      ]
-    },
-    "/(app)/welcome": {
-      "filePath": "(app)/welcome.tsx",
-      "parent": "/(app)"
-    },
-    "/(auth)/login": {
-      "filePath": "(auth)/login.tsx",
-      "parent": "/(auth)"
-    },
-    "/(auth)/register": {
-      "filePath": "(auth)/register.tsx",
-      "parent": "/(auth)"
-    },
-    "/(app)/": {
-      "filePath": "(app)/index.tsx",
-      "parent": "/(app)"
-    },
-    "/(app)/candidates/$candidateId": {
-      "filePath": "(app)/candidates/$candidateId/layout.tsx",
-      "parent": "/(app)",
-      "children": [
-        "/(app)/candidates/$candidateId/matching-criteria",
-        "/(app)/candidates/$candidateId/profile"
-      ]
-    },
-    "/(app)/candidates/bulk-upload": {
-      "filePath": "(app)/candidates/bulk-upload.tsx",
-      "parent": "/(app)"
-    },
-    "/(app)/tokens/success": {
-      "filePath": "(app)/tokens/success.tsx",
-      "parent": "/(app)"
-    },
-    "/(app)/candidates/": {
-      "filePath": "(app)/candidates/index.tsx",
-      "parent": "/(app)"
-    },
-    "/(app)/invoices/": {
-      "filePath": "(app)/invoices/index.tsx",
-      "parent": "/(app)"
-    },
-    "/(app)/profile/": {
-      "filePath": "(app)/profile/index.tsx",
-      "parent": "/(app)"
-    },
-    "/(app)/tokens/": {
-      "filePath": "(app)/tokens/index.tsx",
-      "parent": "/(app)"
-    },
-    "/(app)/candidates/$candidateId/matching-criteria": {
-      "filePath": "(app)/candidates/$candidateId/matching-criteria.tsx",
-      "parent": "/(app)/candidates/$candidateId"
-    },
-    "/(app)/candidates/$candidateId/profile": {
-      "filePath": "(app)/candidates/$candidateId/profile.tsx",
-      "parent": "/(app)/candidates/$candidateId"
-    }
-  }
+const rootServerRouteChildren: RootServerRouteChildren = {
+  ApiStripeWebhookServerRoute: ApiStripeWebhookServerRoute,
+  ApiAuthSplatServerRoute: ApiAuthSplatServerRoute,
+  ApiTrpcSplatServerRoute: ApiTrpcSplatServerRoute,
 }
-ROUTE_MANIFEST_END */
+export const serverRouteTree = rootServerRouteImport
+  ._addFileChildren(rootServerRouteChildren)
+  ._addFileTypes<FileServerRouteTypes>()

@@ -28,23 +28,33 @@ const data = {
   },
   navMain: [
     {
-      title: "Candidates",
-      url: "/candidates",
+      title: "Candidate Verification",
+      url: "/candidate-verification",
       icon: UserRoundCheckIcon,
     },
     {
-      title: "Profile",
-      url: "/profile",
+      title: "Candidate",
+      url: "/candidates",
       icon: CogIcon,
     },
     {
-      title: "Tokens",
-      url: "/tokens",
+      title: "Schedule check & Matches",
+      url: "/schedule-check-and-matches",
       icon: DollarSignIcon,
     },
     {
-      title: "Invoices",
-      url: "/invoices",
+      title: "Chats",
+      url: "/chats",
+      icon: DollarSignIcon,
+    },
+    {
+      title: "Knowledge bank",
+      url: "/knowledge-bank",
+      icon: DollarSignIcon,
+    },
+    {
+      title: "Settings",
+      url: "/settings",
       icon: DollarSignIcon,
     },
   ],

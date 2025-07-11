@@ -27,10 +27,7 @@ import { useTRPC } from "@/lib/trpc/react";
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
 import { useForm } from "react-hook-form";
-import type {
-  UpdateCandidate,
-  UpdateCandidateProfile,
-} from "../../model/schema";
+import type { UpdateCandidateMatchingCritera } from "../../model/schema";
 import type { AvailabilityType } from "../../profile/model/types";
 
 export function Availabillty() {
@@ -49,10 +46,24 @@ export function Availabillty() {
         </EditSection>
       </CardHeader>
       <CardContent>
-        <p className="whitespace-pre-line">
-          {/* {candidate?.availability || "..."} */}
-          123
-        </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "125px 1fr",
+            gap: "8px 4px",
+          }}
+        >
+          {Object.entries(candidate?.matchingCriteria.availability ?? {}).map(
+            ([day, time]) => (
+              <React.Fragment key={day}>
+                <div>{day}:</div>
+                <div>
+                  {time.from} - {time.to}
+                </div>
+              </React.Fragment>
+            ),
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -64,8 +75,8 @@ const days: (keyof AvailabilityType)[] = [
   "wednesday",
   "thursday",
   "friday",
-  "saturday",
-  "sunday",
+  // "saturday",
+  // "sunday",
 ];
 
 function EditSection({ children }: React.PropsWithChildren) {
@@ -80,19 +91,20 @@ function EditSection({ children }: React.PropsWithChildren) {
   const router = useRouter();
 
   const trpc = useTRPC();
-  const update = useMutation(trpc.candidate.update.mutationOptions());
-  const form = useForm<UpdateCandidate>({
+  const update = useMutation(
+    trpc.candidateMatchingCriteria.update.mutationOptions(),
+  );
+  const form = useForm<UpdateCandidateMatchingCritera>({
     defaultValues: {
-      availability: candidate?.availability ?? {},
+      availability: candidate?.matchingCriteria.availability ?? {},
     },
   });
 
-  const onSubmit = async (values: UpdateCandidate) => {
-    console.log(values);
-    // await update.mutateAsync({ ...values, candidateId });
-    // await router.invalidate();
+  const onSubmit = async (values: UpdateCandidateMatchingCritera) => {
+    await update.mutateAsync({ ...values, candidateId });
+    await router.invalidate();
 
-    // setOpen(false);
+    setOpen(false);
   };
 
   return (
@@ -108,7 +120,7 @@ function EditSection({ children }: React.PropsWithChildren) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div>
+            <div className="space-y-4">
               {days.map((day) => {
                 return (
                   <FormField
@@ -118,7 +130,7 @@ function EditSection({ children }: React.PropsWithChildren) {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <div className="flex gap-2 items-center">
+                          <div className="flex items-center gap-2">
                             <div className="w-1/2">
                               <span>{day}: </span>
                             </div>
@@ -126,8 +138,8 @@ function EditSection({ children }: React.PropsWithChildren) {
                               type="time"
                               id="time-picker"
                               step="1"
-                              defaultValue="08:00:00"
-                              onChange={(e) =>
+                              defaultValue="09:00:00"
+                              onBlur={(e) =>
                                 field.onChange({
                                   ...field.value,
                                   from: e.target.value,
@@ -139,8 +151,8 @@ function EditSection({ children }: React.PropsWithChildren) {
                               type="time"
                               id="time-picker"
                               step="1"
-                              defaultValue="08:00:00"
-                              onChange={(e) =>
+                              defaultValue="17:00:00"
+                              onBlur={(e) =>
                                 field.onChange({
                                   ...field.value,
                                   to: e.target.value,

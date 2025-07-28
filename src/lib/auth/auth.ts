@@ -14,7 +14,7 @@ import { sendEmail } from "@/lib/resend";
 import { env } from "../env.server";
 
 const redis = createClient({
-	url: "redis://localhost:6379",
+	url: env.REDIS_URL,
 	database: 0,
 });
 await redis.connect();

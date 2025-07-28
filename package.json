@@ -7,7 +7,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"start": "vite start",
-		"build": "bun --version && bun run vite build",
+		"build": "bun run vite build",
 		"serve": "vite preview",
 		"email:dev": "email dev --dir src/components/emails --port 5555",
 		"db:generate": "drizzle-kit generate --config drizzle.config.ts",
@@ -119,5 +119,9 @@
 		"typescript": "^5.8.3",
 		"vite": "^7.0.3"
 	},
-	"packageManager": "bun@1.2.18"
+	"packageManager": "bun@1.2.18",
+	"engines": {
+		"node": ">=22",
+		"npm": ">=11"
+	}
 }

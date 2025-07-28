@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"scripts": {
 		"dev": "vite dev",
-		"start": "node /app/.output/server/index.mjs",
+		"start": "vite start",
 		"build": "bun run vite build",
 		"serve": "vite preview",
 		"email:dev": "email dev --dir src/components/emails --port 5555",

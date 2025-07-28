@@ -60,7 +60,7 @@ export function VerificationAndComplaince() {
 	const { agency, profile } = useLoaderData({ from: "/(app)/profile/" });
 
 	return (
-		<Card>
+		<Card variant="ghost">
 			<CardHeader className="flex items-center justify-between">
 				<CardTitle className="flex justify-between">
 					Verification & Compliance
@@ -81,7 +81,7 @@ export function VerificationAndComplaince() {
 						return (
 							<div
 								key={doc.id}
-								className="flex items-center space-x-4 border rounded-xl p-4 shadow-sm"
+								className="flex items-center space-x-4 border border-border rounded-xl p-4 shadow-xs"
 							>
 								{doc.icon}
 								<div className="flex-1 flex gap-2">
@@ -163,7 +163,7 @@ function EditDialog({ children }: React.PropsWithChildren) {
 													<FormControl>
 														<label
 															htmlFor={doc.id}
-															className="relative flex h-30 cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dotted bg-gray-50 hover:bg-gray-100"
+															className="relative flex h-30 cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-border border-dotted bg-gray-50 hover:bg-gray-100"
 														>
 															<Input
 																{...field}

@@ -97,17 +97,17 @@ function RootDocument() {
 				<HeadContent />
 			</head>
 			<body suppressHydrationWarning>
-				<ThemeProvider
+				{/* <ThemeProvider
 					attribute="class"
 					defaultTheme="light"
 					enableSystem
 					disableTransitionOnChange
-				>
-					<Outlet />
-					<Toaster />
-					<TanStackRouterDevtools />
-					<Scripts />
-				</ThemeProvider>
+				> */}
+				<Outlet />
+				<Toaster />
+				<TanStackRouterDevtools />
+				<Scripts />
+				{/* </ThemeProvider> */}
 			</body>
 		</html>
 	);

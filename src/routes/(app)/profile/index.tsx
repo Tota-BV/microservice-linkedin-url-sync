@@ -35,21 +35,21 @@ function RouteComponent() {
 
 	return (
 		<div className="h-full">
-			<div className="-mx-6 -mt-6">
+			<div className="rounded-xl overflow-hidden">
 				<img
 					src="/agency-profile.webp"
 					className="h-52 w-full object-cover"
 					alt="profile"
 				/>
 			</div>
-			<div className="-mx-6 h-full bg-background">
-				<div className="container grid gap-2">
+			<div className="h-full bg-background">
+				<div className="container grid gap24">
 					<div className="flex justify-between">
 						<div className="-mt-15 z-10 size-30">
 							<Avatar>
 								<AvatarImage
 									className="rounded-lg border-4 border-white"
-									src="https://github.com/shadcn.png"
+									src="https://github.com/julianklumpers.png"
 								/>
 								<AvatarFallback>UN</AvatarFallback>
 							</Avatar>
@@ -86,16 +86,16 @@ function RouteComponent() {
 
 					<Separator className="bg-gray-400/50" />
 
-					<div className="-mx-6 grid grid-cols-12 gap-4">
-						<div className="col-span-8 flex flex-col">
+					<div className="grid grid-cols-12 gap-8">
+						<div className="col-span-8 flex flex-col gap-4">
 							<Overview />
 							<Skills />
 							<VerificationAndComplaince />
 							<ReferencesAndProjects />
 						</div>
 
-						<div className="col-span-4 flex flex-col">
-							<Card>
+						<div className="col-span-4 flex flex-col gap-4">
+							<Card variant="ghost">
 								<CardHeader>
 									<CardTitle className="flex justify-between">
 										Office locations
@@ -111,7 +111,7 @@ function RouteComponent() {
 								</CardContent>
 							</Card>
 
-							<Card>
+							<Card variant="ghost">
 								<CardHeader>
 									<CardTitle className="flex justify-between">
 										Laguages
@@ -131,7 +131,7 @@ function RouteComponent() {
 								</CardContent>
 							</Card>
 
-							<Card>
+							<Card variant="ghost">
 								<CardHeader>
 									<CardTitle>Agency information</CardTitle>
 								</CardHeader>

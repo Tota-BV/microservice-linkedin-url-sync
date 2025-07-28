@@ -22,7 +22,7 @@ import { Route as appProfileIndexRouteImport } from './routes/(app)/profile/inde
 import { Route as appInvoicesIndexRouteImport } from './routes/(app)/invoices/index'
 import { Route as appCandidatesIndexRouteImport } from './routes/(app)/candidates/index'
 import { Route as appTokensSuccessRouteImport } from './routes/(app)/tokens/success'
-import { Route as appCandidatesBulkUploadRouteImport } from './routes/(app)/candidates/bulk-upload'
+import { Route as appCandidatesAddRouteImport } from './routes/(app)/candidates/add'
 import { Route as appCandidatesCandidateIdLayoutRouteImport } from './routes/(app)/candidates/$candidateId/layout'
 import { Route as appCandidatesCandidateIdProfileRouteImport } from './routes/(app)/candidates/$candidateId/profile'
 import { Route as appCandidatesCandidateIdMatchingCriteriaRouteImport } from './routes/(app)/candidates/$candidateId/matching-criteria'
@@ -85,9 +85,9 @@ const appTokensSuccessRoute = appTokensSuccessRouteImport.update({
   path: '/tokens/success',
   getParentRoute: () => appLayoutRoute,
 } as any)
-const appCandidatesBulkUploadRoute = appCandidatesBulkUploadRouteImport.update({
-  id: '/candidates/bulk-upload',
-  path: '/candidates/bulk-upload',
+const appCandidatesAddRoute = appCandidatesAddRouteImport.update({
+  id: '/candidates/add',
+  path: '/candidates/add',
   getParentRoute: () => appLayoutRoute,
 } as any)
 const appCandidatesCandidateIdLayoutRoute =
@@ -130,7 +130,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
   '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
-  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/candidates/add': typeof appCandidatesAddRoute
   '/tokens/success': typeof appTokensSuccessRoute
   '/candidates': typeof appCandidatesIndexRoute
   '/invoices': typeof appInvoicesIndexRoute
@@ -145,7 +145,7 @@ export interface FileRoutesByTo {
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
   '/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
-  '/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/candidates/add': typeof appCandidatesAddRoute
   '/tokens/success': typeof appTokensSuccessRoute
   '/candidates': typeof appCandidatesIndexRoute
   '/invoices': typeof appInvoicesIndexRoute
@@ -163,7 +163,7 @@ export interface FileRoutesById {
   '/(auth)/register': typeof authRegisterRoute
   '/(app)/': typeof appIndexRoute
   '/(app)/candidates/$candidateId': typeof appCandidatesCandidateIdLayoutRouteWithChildren
-  '/(app)/candidates/bulk-upload': typeof appCandidatesBulkUploadRoute
+  '/(app)/candidates/add': typeof appCandidatesAddRoute
   '/(app)/tokens/success': typeof appTokensSuccessRoute
   '/(app)/candidates/': typeof appCandidatesIndexRoute
   '/(app)/invoices/': typeof appInvoicesIndexRoute
@@ -180,7 +180,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/candidates/$candidateId'
-    | '/candidates/bulk-upload'
+    | '/candidates/add'
     | '/tokens/success'
     | '/candidates'
     | '/invoices'
@@ -195,7 +195,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/candidates/$candidateId'
-    | '/candidates/bulk-upload'
+    | '/candidates/add'
     | '/tokens/success'
     | '/candidates'
     | '/invoices'
@@ -212,7 +212,7 @@ export interface FileRouteTypes {
     | '/(auth)/register'
     | '/(app)/'
     | '/(app)/candidates/$candidateId'
-    | '/(app)/candidates/bulk-upload'
+    | '/(app)/candidates/add'
     | '/(app)/tokens/success'
     | '/(app)/candidates/'
     | '/(app)/invoices/'
@@ -335,11 +335,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appTokensSuccessRouteImport
       parentRoute: typeof appLayoutRoute
     }
-    '/(app)/candidates/bulk-upload': {
-      id: '/(app)/candidates/bulk-upload'
-      path: '/candidates/bulk-upload'
-      fullPath: '/candidates/bulk-upload'
-      preLoaderRoute: typeof appCandidatesBulkUploadRouteImport
+    '/(app)/candidates/add': {
+      id: '/(app)/candidates/add'
+      path: '/candidates/add'
+      fullPath: '/candidates/add'
+      preLoaderRoute: typeof appCandidatesAddRouteImport
       parentRoute: typeof appLayoutRoute
     }
     '/(app)/candidates/$candidateId': {
@@ -412,7 +412,7 @@ interface appLayoutRouteChildren {
   appWelcomeRoute: typeof appWelcomeRoute
   appIndexRoute: typeof appIndexRoute
   appCandidatesCandidateIdLayoutRoute: typeof appCandidatesCandidateIdLayoutRouteWithChildren
-  appCandidatesBulkUploadRoute: typeof appCandidatesBulkUploadRoute
+  appCandidatesAddRoute: typeof appCandidatesAddRoute
   appTokensSuccessRoute: typeof appTokensSuccessRoute
   appCandidatesIndexRoute: typeof appCandidatesIndexRoute
   appInvoicesIndexRoute: typeof appInvoicesIndexRoute
@@ -425,7 +425,7 @@ const appLayoutRouteChildren: appLayoutRouteChildren = {
   appIndexRoute: appIndexRoute,
   appCandidatesCandidateIdLayoutRoute:
     appCandidatesCandidateIdLayoutRouteWithChildren,
-  appCandidatesBulkUploadRoute: appCandidatesBulkUploadRoute,
+  appCandidatesAddRoute: appCandidatesAddRoute,
   appTokensSuccessRoute: appTokensSuccessRoute,
   appCandidatesIndexRoute: appCandidatesIndexRoute,
   appInvoicesIndexRoute: appInvoicesIndexRoute,

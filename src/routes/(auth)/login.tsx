@@ -20,7 +20,7 @@ function RouteComponent() {
 					<CardTitle className="font-display text-2xl">
 						Login to your account
 					</CardTitle>
-					<CardDescription className="text-balance text-muted-foreground text-sm">
+					<CardDescription className="text-balance text-sm">
 						Enter your email below to login to your account
 					</CardDescription>
 				</CardHeader>

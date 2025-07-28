@@ -4,11 +4,9 @@ import {
 	useQueryClient,
 	useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useLoaderData, useParams } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import React from "react";
-import { useForm } from "react-hook-form";
-import { Combobox } from "@/components/combobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,15 +20,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormMessage,
-} from "@/components/ui/form";
+import MultipleSelector from "@/components/ui/multi-select";
 import { useTRPC } from "@/lib/trpc/react";
-import type { CreateSkills } from "../model/schema";
 
 export function Skills() {
 	const { candidateId } = useParams({
@@ -43,7 +34,7 @@ export function Skills() {
 	);
 
 	return (
-		<Card>
+		<Card variant="ghost">
 			<CardHeader className="flex items-center justify-between">
 				<CardTitle className="flex justify-between">Skills</CardTitle>
 				<EditSection>
@@ -53,7 +44,7 @@ export function Skills() {
 				</EditSection>
 			</CardHeader>
 			<CardContent>
-				<div className="flex gap-1">
+				<div className="flex gap-1 flex-wrap">
 					{candidateSkills.data?.map(({ skill }) => (
 						<Badge variant="secondary" key={skill.id}>
 							{skill.name}
@@ -84,26 +75,18 @@ function EditSection({ children }: React.PropsWithChildren) {
 	);
 	const update = useMutation(trpc.skills.update.mutationOptions());
 
-	const form = useForm<{ skills: CreateSkills[] }>({
-		defaultValues: {
-			skills: candidateSkills.data ?? [],
-		},
-	});
+	const [values, setValues] = React.useState(candidateSkills.data ?? []);
 
-	console.log(candidateSkills.data);
-
-	const onSubmit = async (values: { skills: CreateSkills[] }) => {
+	const onSubmit = async () => {
 		await update.mutateAsync(
-			values.skills.map((skill) => ({
+			values.map((skill) => ({
 				candidateId,
 				skillId: skill.id,
 			})),
 		);
-
 		await queryClient.invalidateQueries({
 			queryKey: trpc.skills.getManyByCandidateId.queryKey(),
 		});
-
 		setOpen(false);
 	};
 
@@ -117,37 +100,33 @@ function EditSection({ children }: React.PropsWithChildren) {
 						Define your candidates skills below.
 					</DialogDescription>
 				</DialogHeader>
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)}>
-						<FormField
-							control={form.control}
-							name="skills"
-							render={({ field }) => (
-								console.log(field),
-								(
-									<FormItem>
-										<FormControl>
-											<Combobox
-												data={skills.data}
-												fullWidth
-												enableSearch
-												multiSelect
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)
-							)}
-						/>
-						<DialogFooter className="pt-8">
-							<DialogClose asChild>
-								<Button variant="outline">Cancel</Button>
-							</DialogClose>
-							<Button type="submit">Save</Button>
-						</DialogFooter>
-					</form>
-					{/* <form onSubmit={form.handleSubmit(onSubmit)}>
+
+				<MultipleSelector
+					options={skills.data.map((s) => ({
+						label: s.name,
+						value: s.id,
+					}))}
+					value={values.map((f) => ({
+						label: f.name,
+						value: f.id,
+					}))}
+					onChange={(values) => {
+						setValues(
+							skills.data.filter((s) => values.find((v) => v.value === s.id)),
+						);
+					}}
+					className="w-full"
+				/>
+				<DialogFooter className="pt-8">
+					<DialogClose asChild>
+						<Button variant="outline">Cancel</Button>
+					</DialogClose>
+					<Button onClick={onSubmit} type="submit">
+						Save
+					</Button>
+				</DialogFooter>
+
+				{/* <form onSubmit={form.handleSubmit(onSubmit)}>
 						<div
 							className={cn(
 								"flex w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs outline-none transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium file:text-sm placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30",
@@ -204,7 +183,6 @@ function EditSection({ children }: React.PropsWithChildren) {
 							<Button>Save</Button>
 						</DialogFooter>
 					</form> */}
-				</Form>
 			</DialogContent>
 		</Dialog>
 	);

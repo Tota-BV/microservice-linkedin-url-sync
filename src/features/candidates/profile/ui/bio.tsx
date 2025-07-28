@@ -32,7 +32,7 @@ export function Bio() {
 	});
 
 	return (
-		<Card>
+		<Card variant="ghost">
 			<CardHeader className="flex flex-row items-center justify-between">
 				<CardTitle className="flex justify-between">Bio</CardTitle>
 				<EditSection>

@@ -32,36 +32,39 @@ export const candidateRouter = createTRPCRouter({
 		.query(async ({ input }) => {
 			const candidateRecords = await db.query.candidate.findMany({
 				where: eq(candidate.agencyId, input.agencyId),
-				// with: { profile: true, matchingCriteria: true },
+				// with: {
+				// 	profile: true,
+				// 	matchingCriteria: true,
+				// },
 			});
 
 			return candidateRecords;
 		}),
-	create: protectedProcedure
-		.input(createCandidateSchema)
-		.mutation(async ({ input }) => {
-			console.log(input);
+	create: protectedProcedure.input(z.any()).mutation(async ({ input }) => {
+		console.log(input);
 
-			return db
-				.transaction(async (tx) => {
-					const [insertedCandidate] = await tx
-						.insert(candidate)
-						.values(input)
-						.returning();
+		return db
+			.transaction(async (tx) => {
+				const insertedCandidates = await tx
+					.insert(candidate)
+					.values(input)
+					.returning();
 
-					await tx.insert(candidateAvailability).values({
-						candidateId: insertedCandidate.id,
-					});
-				})
-				.catch((err) => console.log(err));
-		}),
+				const candidateIds = insertedCandidates.map((row) => ({
+					candidateId: row.id,
+				}));
+
+				await tx.insert(candidateAvailability).values(candidateIds);
+			})
+			.catch((err) => console.log(err));
+	}),
 	update: protectedProcedure
 		.input(updateCandidateSchema)
 		.mutation(async ({ input }) => {
 			if (input.id) {
 				return db
 					.update(candidate)
-					.set(input)
+					.set({ ...input, updatedAt: new Date() })
 					.where(eq(candidate.id, input.id));
 			}
 

@@ -1,25 +1,21 @@
-import {
-	createFileRoute,
-	Link,
-	Outlet,
-	redirect,
-	useRouter,
-} from "@tanstack/react-router";
-import { ArrowRightIcon } from "lucide-react";
-import { AccountPopover } from "@/components/account-popover";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { AccountMenu } from "@/components/account-menu";
 import { AppSidebar } from "@/components/app-sidebar";
-import { AvatarUser } from "@/components/avatar-user";
-import { Button, buttonVariants } from "@/components/ui/button";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import {
 	SidebarInset,
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { authClient } from "@/lib/auth/auth-client";
 import { getIsomorphicSession } from "@/lib/auth/get-isomorphic-session";
-import { stringAvatar } from "@/utils/conversion/text";
 
 export const Route = createFileRoute("/(app)")({
 	beforeLoad: async () => {
@@ -35,56 +31,35 @@ export const Route = createFileRoute("/(app)")({
 });
 
 function RouteComponent() {
-	const user = Route.useRouteContext({ select: (d) => d.user });
-	const router = useRouter();
-	const isMobile = useIsMobile();
-
 	return (
 		<SidebarProvider>
 			<AppSidebar variant="inset" />
 			<SidebarInset>
 				<header className="flex h-[var(--sidebar-width-icon)] shrink-0 items-center gap-2 transition-[width,height] ease-linear">
 					<div className="flex flex-1 items-center justify-between px-2">
-						{isMobile ? <SidebarTrigger /> : <div />}
-						<AccountPopover>
-							<AvatarUser
-								email={user.email}
-								fullName={user.name}
-								initials={stringAvatar(user.name)}
+						<div className="flex items-center gap-2 px-4">
+							<SidebarTrigger />
+							<Separator
+								orientation="vertical"
+								className="mr-2 data-[orientation=vertical]:h-4"
 							/>
-							<Link
-								to="/profile"
-								className={buttonVariants({
-									variant: "ghost",
-									size: "sm",
-									className:
-										"justify-between! flex w-full flex-row px-2 uppercase",
-								})}
-							>
-								<span>Profile</span>
-								<ArrowRightIcon size={18} />
-							</Link>
-							<Separator />
-							<Button
-								className="w-full uppercase"
-								onClick={async () => {
-									await authClient.signOut({
-										fetchOptions: {
-											onSuccess: () => {
-												router.invalidate();
-											},
-										},
-									});
-								}}
-								rel="noreferrer"
-								variant="outline"
-							>
-								logout
-							</Button>
-						</AccountPopover>
+							<Breadcrumb>
+								<BreadcrumbList>
+									<BreadcrumbItem className="hidden md:block">
+										<BreadcrumbLink href="/">Tota</BreadcrumbLink>
+									</BreadcrumbItem>
+									<BreadcrumbSeparator className="hidden md:block" />
+									<BreadcrumbItem>
+										<BreadcrumbPage>Profile</BreadcrumbPage>
+									</BreadcrumbItem>
+								</BreadcrumbList>
+							</Breadcrumb>
+						</div>
+						<AccountMenu />
 					</div>
 				</header>
-				<div className="min-h-[100vh] flex-1 rounded-xl bg-linear-[var(--background-primary-gradient)] p-6 md:min-h-min overflow-hidden">
+				<Separator />
+				<div className="min-h-[100vh] flex-1 rounded-xl py-6 md:min-h-min overflow-hidden">
 					<Outlet />
 				</div>
 			</SidebarInset>

@@ -25,7 +25,7 @@ export function Skills() {
 	const { profile } = useLoaderData({ from: "/(app)/profile/" });
 
 	return (
-		<Card>
+		<Card variant="ghost">
 			<CardHeader className="flex items-center justify-between">
 				<CardTitle className="flex justify-between">Skills</CardTitle>
 				<EditSkills>

@@ -31,15 +31,15 @@ function RouteComponent() {
 
 	return (
 		<div className="h-full">
-			<div className="-mx-6 -mt-6">
+			<div>
 				<img
 					src="/agency-profile.webp"
 					className="h-52 w-full object-cover"
 					alt="profile"
 				/>
 			</div>
-			<div className="-mx-6 h-full bg-background">
-				<div className="container grid gap-2">
+			<div className="h-full bg-background">
+				<div className="container grid gap-4">
 					<div className="grid grid-cols-12 gap-10">
 						<div className="col-span-12 flex gap-6">
 							<div>
@@ -106,7 +106,7 @@ function RouteComponent() {
 						</div>
 						<div className="col-span-4 flex flex-col items-end justify-between gap-8">
 							<div className="flex flex-col">
-								<Button>Valido invite</Button>
+								<Button>Verify your candidate</Button>
 							</div>
 						</div>
 					</div>

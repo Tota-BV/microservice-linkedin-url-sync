@@ -166,9 +166,10 @@ export function Combobox<T extends TValue, N extends string>(
 					disabled={loading || disabled || hasOne}
 					variant="outline"
 					role="combobox"
+					size="sm"
 					aria-expanded={open}
 					className={cn(
-						"max-w-64 justify-between items-start py-2 text-left h-auto",
+						"max-w-64 justify-between items-center hover:bg-transparent hover:text-accent-background",
 						fullWidth && "w-full max-w-full",
 						className,
 					)}

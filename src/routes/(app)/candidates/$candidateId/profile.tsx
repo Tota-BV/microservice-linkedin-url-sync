@@ -10,12 +10,12 @@ export const Route = createFileRoute("/(app)/candidates/$candidateId/profile")({
 
 function RouteComponent() {
 	return (
-		<div className="-mx-6 grid grid-cols-12 gap-4">
-			<div className="col-span-8 flex flex-col">
+		<div className="grid grid-cols-12 gap-4">
+			<div className="col-span-8 flex flex-col gap-4">
 				<Bio />
 				<Skills />
-				{/*
 				<Experience />
+				{/*
 				<Education /> */}
 			</div>
 		</div>

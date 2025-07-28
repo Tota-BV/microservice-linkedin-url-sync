@@ -5,11 +5,6 @@ import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-	resolve: {
-		alias: {
-			"@": path.resolve(__dirname, "src"),
-		},
-	},
 	plugins: [
 		viteTsConfigPaths({
 			projects: ["./tsconfig.json"],
@@ -22,4 +17,10 @@ export default defineConfig({
 			},
 		}),
 	],
+	resolve: {
+		alias: {
+			"@": path.resolve(__dirname, "./src"),
+			"@/*": path.resolve(__dirname, "./src/*"),
+		},
+	},
 });

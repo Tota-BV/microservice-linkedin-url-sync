@@ -12,11 +12,13 @@ import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema/auth";
 import { sendEmail } from "@/lib/resend";
 import { env } from "../env.server";
+import { sendVerificiationMail } from "../mail/send-user-confirmation";
 
 const redis = createClient({
 	url: env.REDIS_URL,
 	database: 0,
 });
+
 await redis.connect();
 
 export const auth = betterAuth({
@@ -89,19 +91,16 @@ export const auth = betterAuth({
 		autoSignInAfterVerification: true,
 		sendOnSignUp: true,
 		sendVerificationEmail: async ({ url, user }) => {
-			console.log("Send email to verify email address");
-			console.log(user, url);
-			// await sendEmail({
-			//   subject: "Verify your email",
-			//   template: VerifyEmail({
-			//     url: url,
-			//     username: user.email,
-			//   }),
-			//   to: user.email,
-			// });
+			try {
+				await sendVerificiationMail({
+					verificationUrl: url,
+					email: user.email,
+				});
+			} catch (err) {
+				console.log(err);
+			}
 		},
 	},
-
 	plugins: [
 		openAPI(),
 		twoFactor(),
@@ -133,6 +132,6 @@ export const auth = betterAuth({
 				});
 			},
 		}),
-		reactStartCookies(), // make sure this is the last plugin in the array
+		reactStartCookies(),
 	],
 });

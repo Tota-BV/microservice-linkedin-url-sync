@@ -7,6 +7,9 @@ export const env = createEnv({
 		DATABASE_URL: z.string().url(),
 		REDIS_URL: z.string().url(),
 		BETTER_AUTH_SECRET: z.string(),
+
+		SMTP_URL: z.string(),
+		SMTP_PORT: z.coerce.number(),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
     ports:
       - "9000:9000"
-      - "2500:1025"
+      - "1025:1025"
     environment:
       MP_UI_BIND_ADDR: :9000
       MP_MAX_MESSAGES: 5000

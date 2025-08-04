@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -7,14 +9,35 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import LoginForm from "@/features/login/ui/login-form";
+import { sendVerificiationMail } from "@/lib/mail/send-user-confirmation";
 
 export const Route = createFileRoute("/(auth)/login")({
 	component: RouteComponent,
 });
 
+const foo = createServerFn().handler(async () => {
+	try {
+		console.log("1");
+		await sendVerificiationMail({
+			verificationUrl: "123",
+			email: "test@test.nl",
+		});
+		console.log("YESSIR");
+	} catch (err) {
+		console.log(err);
+	}
+});
+
 function RouteComponent() {
 	return (
 		<div>
+			<Button
+				onClick={() => {
+					foo();
+				}}
+			>
+				TEST
+			</Button>
 			<Card className="min-w-md gap-6">
 				<CardHeader>
 					<CardTitle className="font-display text-2xl">

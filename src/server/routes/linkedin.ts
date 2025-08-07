@@ -100,6 +100,19 @@ export const linkedInRouter = createTRPCRouter({
       try {
         console.log(`🔄 Processing and saving LinkedIn URL: ${linkedinUrl}`);
         
+        // Ensure database schema is ready
+        const { ensureDatabaseSchema } = await import('@/lib/database');
+        const schemaReady = await ensureDatabaseSchema();
+        
+        if (!schemaReady) {
+          return {
+            success: false,
+            error: "Database schema not ready",
+            linkedinUrl,
+            processedAt: new Date().toISOString(),
+          };
+        }
+        
         // Check cache first
         const isFresh = await isCacheFresh(linkedinUrl);
         let linkedinData;
@@ -127,8 +140,9 @@ export const linkedInRouter = createTRPCRouter({
           success: result.success,
           source,
           candidateId: result.candidateId,
-          skillsCreated: result.skillsCreated,
-          skillsLinked: result.skillsLinked,
+          skillsCreated: result.skillsCreated || 0,
+          skillsLinked: result.skillsLinked || 0,
+          duplicate: result.duplicate || false,
           error: result.error,
           metadata: {
             linkedinUrl,

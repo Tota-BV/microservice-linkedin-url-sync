@@ -1,36 +1,30 @@
 # LinkedIn URL Sync Microservice
 
-A microservice for scraping LinkedIn profiles and syncing data to your database.
+A lightweight microservice for scraping LinkedIn profiles and syncing data to your database.
 
-## Environment Variables
+## Features
 
-Create a `.env` file with the following variables:
-
-```bash
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/database
-REDIS_URL=redis://localhost:6379
-
-# Auth
-BETTER_AUTH_SECRET=your-secret-key
-
-# SMTP
-SMTP_URL=smtp://localhost
-SMTP_PORT=587
-
-# RapidAPI Configuration
-RAPIDAPI_KEY=your-rapidapi-key-here
-RAPIDAPI_HOST=professional-network-data.p.rapidapi.com
-
-# Cache Configuration
-CACHE_EXPIRATION_DAYS=30
-CACHE_DIR=./src/cache/linkedin-profiles
-```
+- ✅ **LinkedIn Profile Scraping** - Via RapidAPI Professional Network Data
+- ✅ **Smart Caching** - Date-based caching with no deletion strategy
+- ✅ **Bulk Processing** - Handle multiple URLs with rate limiting
+- ✅ **Data Mapping** - Convert to your database schema format
+- ✅ **REST API** - Simple HTTP endpoints for easy integration
 
 ## API Endpoints
 
-- `POST /api/trpc/linkedin.sync` - Sync single or multiple LinkedIn URLs
 - `GET /health` - Health check endpoint
+- `POST /api/linkedin/sync` - Sync single LinkedIn URL
+- `POST /api/linkedin/sync-bulk` - Sync multiple LinkedIn URLs
+
+## Environment Variables
+
+```bash
+RAPIDAPI_KEY=your-rapidapi-key-here
+RAPIDAPI_HOST=professional-network-data.p.rapidapi.com
+CACHE_EXPIRATION_DAYS=30
+CACHE_DIR=./src/cache/linkedin-profiles
+PORT=3001
+```
 
 ## Development
 
@@ -38,3 +32,7 @@ CACHE_DIR=./src/cache/linkedin-profiles
 bun install
 bun run dev
 ```
+
+## Deployment
+
+Deployed on Railway with automatic GitHub integration.

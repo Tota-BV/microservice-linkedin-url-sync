@@ -10,6 +10,7 @@ import { candidateProfileRouter } from "./routes/candidateProfile";
 import { invoicesRouter } from "./routes/invoices";
 import { skillsRouter } from "./routes/skills";
 import { tokensRouter } from "./routes/tokens";
+import { linkedInRouter } from "./routes/linkedin";
 
 export const trpcRouter = createTRPCRouter({
 	kvk: kvkRouter,
@@ -22,6 +23,7 @@ export const trpcRouter = createTRPCRouter({
 	skills: skillsRouter,
 	tokens: tokensRouter,
 	invoices: invoicesRouter,
+	linkedin: linkedInRouter,
 });
 
 export type TRPCRouter = typeof trpcRouter;

@@ -1,0 +1,13 @@
+node_modules
+.git
+.gitignore
+README.md
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
+.cursor
+.vscode
+.tanstack
+types

@@ -355,6 +355,169 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// Mock LinkedIn sync endpoint (uses cached data)
+	if (req.url === "/api/linkedin/sync-mock" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl, profileType = "satya-nadella" } = JSON.parse(body);
+					
+					console.log(`🧪 Using mock data for: ${linkedinUrl} (profile: ${profileType})`);
+					
+					// Import mock data
+					const { getMockData } = await import('./lib/mock-data');
+					const mockData = getMockData(profileType);
+					
+					// Map to candidate format
+					const candidateData = await mapLinkedInToCandidate(mockData, linkedinUrl);
+					const validation = validateCandidateData(candidateData.candidateProfile);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						source: "mock",
+						databaseOperations: candidateData.databaseOperations,
+						candidateProfile: candidateData.candidateProfile,
+						validation,
+						metadata: {
+							linkedinUrl,
+							processedAt: new Date().toISOString(),
+							totalPositions: mockData.position?.length || 0,
+							totalSkills: mockData.skills?.length || 0,
+							profileType
+						}
+					}));
+					
+				} catch (error: any) {
+					console.error(`❌ Error processing mock data:`, error.message);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error.message,
+						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
+	// Mock sync with backup and database insert
+	if (req.url === "/api/linkedin/sync-mock-with-backup" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl, profileType = "satya-nadella" } = JSON.parse(body);
+					
+					console.log(`🧪 Processing mock data with backup: ${linkedinUrl} (profile: ${profileType})`);
+					
+					// Check database schema compatibility
+					const schemaCompatible = await checkDatabaseSchema();
+					if (!schemaCompatible) {
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({
+							success: false,
+							error: "Database schema not compatible",
+							linkedinUrl,
+							processedAt: new Date().toISOString(),
+						}));
+						return;
+					}
+					
+					// Import mock data
+					const { getMockData } = await import('./lib/mock-data');
+					const mockData = getMockData(profileType);
+					
+					// Map to candidate format
+					const candidateData = await mapLinkedInToCandidate(mockData, linkedinUrl);
+					
+					// STEP 1: Save JSON to volume
+					let jsonFile = null;
+					let jsonSaved = false;
+					try {
+						jsonFile = await saveJsonToVolume(candidateData, linkedinUrl);
+						jsonSaved = true;
+						console.log(`💾 JSON backup saved: ${jsonFile}`);
+					} catch (jsonError) {
+						console.error(`❌ Failed to save JSON backup:`, jsonError);
+					}
+					
+					// STEP 2: Insert to database (skills first, then candidate)
+					let dbResult = null;
+					let databaseInserted = false;
+					try {
+						// Use mock data for database insert
+						const { insertLinkedInDataWithOrder } = await import('./lib/database');
+						dbResult = await insertLinkedInDataWithOrder(linkedinUrl);
+						databaseInserted = dbResult.success;
+						console.log(`💾 Database insert result:`, dbResult);
+					} catch (dbError) {
+						console.error(`❌ Failed to insert to database:`, dbError);
+					}
+					
+					// Return comprehensive result
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: jsonSaved || databaseInserted,
+						source: "mock",
+						jsonBackup: {
+							saved: jsonSaved,
+							filepath: jsonFile,
+							error: jsonSaved ? null : "Failed to save JSON backup"
+						},
+						databaseInsert: {
+							inserted: databaseInserted,
+							candidateId: dbResult?.candidateId,
+							skillsCreated: dbResult?.skillsCreated || 0,
+							skillsLinked: dbResult?.skillsLinked || 0,
+							duplicate: dbResult?.duplicate || false,
+							error: databaseInserted ? null : dbResult?.error || "Failed to insert to database"
+						},
+						metadata: {
+							linkedinUrl,
+							processedAt: new Date().toISOString(),
+							totalPositions: mockData.position?.length || 0,
+							totalSkills: mockData.skills?.length || 0,
+							profileType
+						}
+					}));
+					
+				} catch (error: any) {
+					console.error(`❌ Error processing mock data:`, error.message);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error.message,
+						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
 	// Database test endpoint
 	if (req.url === "/api/test/database" && req.method === "POST") {
 		try {
@@ -439,7 +602,6 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					res.end(JSON.stringify({
 						success: false,
 						error: error.message,
-						testType,
 						processedAt: new Date().toISOString(),
 					}));
 				}

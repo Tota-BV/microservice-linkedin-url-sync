@@ -355,6 +355,105 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// Database test endpoint
+	if (req.url === "/api/test/database" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { testType } = JSON.parse(body);
+					
+					console.log(`🧪 Testing database: ${testType}`);
+					
+					// Check database schema
+					const schemaCompatible = await checkDatabaseSchema();
+					if (!schemaCompatible) {
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({
+							success: false,
+							error: "Database schema not compatible",
+							testType,
+							processedAt: new Date().toISOString(),
+						}));
+						return;
+					}
+					
+					if (testType === "skill") {
+						// Test skill creation
+						const { createSkill } = await import('./lib/database');
+						const skillId = await createSkill("Test Skill", "linkedin");
+						
+						res.writeHead(200, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({
+							success: true,
+							testType: "skill",
+							skillId,
+							message: "Skill created successfully",
+							processedAt: new Date().toISOString(),
+						}));
+					} else if (testType === "candidate") {
+						// Test candidate creation
+						const { createCandidate } = await import('./lib/database');
+						const candidateData = {
+							firstName: "Test",
+							lastName: "Candidate",
+							email: "test@example.com",
+							dateOfBirth: "1990-01-01",
+							linkedinUrl: "https://www.linkedin.com/in/test-candidate-123/",
+							profileImageUrl: "https://example.com/image.jpg",
+							workingLocation: "Amsterdam",
+							bio: "Test bio",
+							generalJobTitle: "Software Engineer",
+							currentCompany: "Test Company",
+							category: "Technology",
+							isActive: true
+						};
+						
+						const candidateId = await createCandidate(candidateData);
+						
+						res.writeHead(200, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({
+							success: true,
+							testType: "candidate",
+							candidateId,
+							message: "Candidate created successfully",
+							processedAt: new Date().toISOString(),
+						}));
+					} else {
+						res.writeHead(400, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({
+							success: false,
+							error: "Invalid test type. Use 'skill' or 'candidate'",
+							testType,
+							processedAt: new Date().toISOString(),
+						}));
+					}
+					
+				} catch (error: any) {
+					console.error(`❌ Database test error:`, error.message);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error.message,
+						testType,
+						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
 	// 404 for other routes
 	res.writeHead(404, { "Content-Type": "application/json" });
 	res.end(JSON.stringify({ 

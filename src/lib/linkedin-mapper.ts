@@ -39,7 +39,7 @@ export interface LinkedInProfileData {
   }>;
 }
 
-// Map LinkedIn data to your candidate schema
+// Map LinkedIn data to your complete candidate schema
 export function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linkedinUrl: string) {
   // Get current position (most recent)
   const currentPosition = linkedinData.position?.[0];
@@ -55,22 +55,38 @@ export function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linked
     ? `${linkedinData.firstName.toLowerCase()}.${linkedinData.lastName.toLowerCase()}@example.com`
     : '';
 
+  // Extract date of birth from bio or use default
+  const dateOfBirth = extractDateOfBirth(linkedinData.summary) || new Date('1990-01-01');
+
+  // Determine category based on job title and skills
+  const category = determineCategory(currentPosition?.title, skills);
+
   return {
     // Required fields from your candidate schema
     firstName: linkedinData.firstName || '',
     lastName: linkedinData.lastName || '',
     email: email,
-    dateOfBirth: new Date('1990-01-01'), // Default date, you might want to extract from bio
+    dateOfBirth: dateOfBirth,
     
-    // Optional fields
+    // Optional fields from candidates table
     linkedinUrl: linkedinUrl,
     profileImageUrl: linkedinData.profilePicture || null,
     workingLocation: location,
     bio: linkedinData.summary || '',
     generalJobTitle: currentPosition?.title || '',
     currentCompany: currentPosition?.companyName || '',
+    category: category,
+    isActive: true,
     
-    // Additional data for reference
+    // Related data structures
+    education: mapEducation(linkedinData.educations),
+    skills: mapSkills(linkedinData.skills),
+    verification: mapVerification(linkedinData.position),
+    availability: mapAvailability(),
+    languages: mapLanguages(linkedinData.summary),
+    certifications: mapCertifications(linkedinData.summary),
+    
+    // Additional metadata
     _rawLinkedInData: {
       headline: linkedinData.headline,
       skills: skills,
@@ -78,9 +94,164 @@ export function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linked
       isPremium: linkedinData.isPremium,
       totalPositions: linkedinData.position?.length || 0,
       totalSkills: skills.length,
-      location: location
+      location: location,
+      profileId: linkedinData.id,
+      urn: linkedinData.urn,
+      username: linkedinData.username
     }
   };
+}
+
+// Map education data
+function mapEducation(educations?: Array<any>) {
+  if (!educations || educations.length === 0) return [];
+  
+  return educations.map(edu => ({
+    degreeTitle: edu.degree || edu.fieldOfStudy || 'Degree',
+    startYear: edu.start?.year || 2020,
+    endYear: edu.end?.year || 2024,
+    institution: edu.schoolName || 'University',
+    location: null
+  }));
+}
+
+// Map skills data
+function mapSkills(skills?: Array<any>) {
+  if (!skills || skills.length === 0) return [];
+  
+  return skills.map(skill => ({
+    skillName: skill.name,
+    isCore: skill.passedSkillAssessment || false,
+    endorsementsCount: skill.endorsementsCount || 0
+  }));
+}
+
+// Map verification data (work experience)
+function mapVerification(positions?: Array<any>) {
+  if (!positions || positions.length === 0) return [];
+  
+  return positions.map((pos, index) => ({
+    jobTitle: pos.title || '',
+    companyName: pos.companyName || '',
+    startYear: pos.start?.year || 2020,
+    endYear: pos.end?.year || null,
+    description: pos.description ? [pos.description] : [],
+    order: index
+  }));
+}
+
+// Map availability (default working hours)
+function mapAvailability() {
+  return {
+    available: true,
+    workingHoursDetail: {
+      monday: { from: "08:00", to: "18:00" },
+      tuesday: { from: "08:00", to: "18:00" },
+      wednesday: { from: "08:00", to: "18:00" },
+      thursday: { from: "08:00", to: "18:00" },
+      friday: { from: "08:00", to: "18:00" }
+    },
+    timezoneOffset: "+01:00",
+    hoursMin: 32,
+    hoursMax: 40,
+    hourlyRateMin: 50,
+    hourlyRateMax: 100
+  };
+}
+
+// Map languages (extract from bio)
+function mapLanguages(bio?: string) {
+  if (!bio) return [];
+  
+  const commonLanguages = ['English', 'Dutch', 'German', 'French', 'Spanish'];
+  const foundLanguages = commonLanguages.filter(lang => 
+    bio.toLowerCase().includes(lang.toLowerCase())
+  );
+  
+  return foundLanguages.map(lang => ({
+    language: lang,
+    proficiency: 'professional' as const
+  }));
+}
+
+// Map certifications (extract from bio)
+function mapCertifications(bio?: string) {
+  if (!bio) return [];
+  
+  const certificationKeywords = ['certified', 'certification', 'certificate', 'diploma'];
+  const hasCertifications = certificationKeywords.some(keyword => 
+    bio.toLowerCase().includes(keyword)
+  );
+  
+  if (hasCertifications) {
+    return [{
+      title: 'Professional Certification',
+      startYear: 2020,
+      endYear: 2024
+    }];
+  }
+  
+  return [];
+}
+
+// Extract date of birth from bio
+function extractDateOfBirth(bio?: string): Date | null {
+  if (!bio) return null;
+  
+  // Look for age patterns like "25 years old" or "born in 1995"
+  const ageMatch = bio.match(/(\d+)\s*years?\s*old/);
+  const bornMatch = bio.match(/born\s+in\s+(\d{4})/);
+  
+  if (bornMatch) {
+    return new Date(parseInt(bornMatch[1]), 0, 1);
+  }
+  
+  if (ageMatch) {
+    const age = parseInt(ageMatch[1]);
+    const currentYear = new Date().getFullYear();
+    return new Date(currentYear - age, 0, 1);
+  }
+  
+  return null;
+}
+
+// Determine candidate category based on job title and skills
+function determineCategory(jobTitle?: string, skills: string[] = []): string | null {
+  if (!jobTitle && skills.length === 0) return null;
+  
+  const title = (jobTitle || '').toLowerCase();
+  const skillString = skills.join(' ').toLowerCase();
+  
+  // Developer category
+  if (title.includes('developer') || title.includes('engineer') || title.includes('programmer') ||
+      skillString.includes('javascript') || skillString.includes('python') || skillString.includes('java')) {
+    return 'developer';
+  }
+  
+  // Cyber category
+  if (title.includes('security') || title.includes('cyber') || title.includes('penetration') ||
+      skillString.includes('security') || skillString.includes('cyber')) {
+    return 'cyber';
+  }
+  
+  // Designer category
+  if (title.includes('designer') || title.includes('ui') || title.includes('ux') ||
+      skillString.includes('figma') || skillString.includes('adobe')) {
+    return 'designer';
+  }
+  
+  // Project Manager category
+  if (title.includes('project') || title.includes('manager') || title.includes('scrum') ||
+      skillString.includes('agile') || skillString.includes('scrum')) {
+    return 'project_manager';
+  }
+  
+  // Product Owner category
+  if (title.includes('product') || title.includes('owner') || title.includes('po')) {
+    return 'product_owner';
+  }
+  
+  return null;
 }
 
 // Validate if the mapped data has required fields

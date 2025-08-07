@@ -11,52 +11,54 @@ const pool = new Pool({
 // Drizzle database instance
 export const db = drizzle(pool);
 
-// Skills table schema (simplified for microservice)
+// Skills table schema (matches existing database)
 export interface Skill {
-  id: string;
-  name: string;
-  skill_type: 'language' | 'library' | 'storage' | 'tool' | 'other';
-  source: 'esco' | 'user' | 'admin' | 'linkedin';
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
+	id: string;
+	name: string;
+	source: 'esco' | 'user' | 'admin' | 'linkedin';
+	is_active: boolean;
+	esco_id?: string;
+	abbreviations?: string[];
+	created_at: Date;
+	updated_at: Date;
+	embedding?: any; // vector type
 }
 
-// Find skill by name
+// Find skill by name (works with existing table structure)
 export async function findSkillByName(skillName: string): Promise<Skill | null> {
-  try {
-    const result = await pool.query(
-      'SELECT * FROM skills WHERE name ILIKE $1 AND is_active = true',
-      [skillName]
-    );
-    
-    if (result.rows.length > 0) {
-      return result.rows[0] as Skill;
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error finding skill by name:', error);
-    return null;
-  }
+	try {
+		const result = await pool.query(
+			'SELECT * FROM skills WHERE name ILIKE $1 AND is_active = true',
+			[skillName]
+		);
+		
+		if (result.rows.length > 0) {
+			return result.rows[0] as Skill;
+		}
+		
+		return null;
+	} catch (error) {
+		console.error('Error finding skill by name:', error);
+		return null;
+	}
 }
 
-// Create new skill
+// Create new skill (works with existing table structure)
 export async function createSkill(skillName: string, skillType: string): Promise<string> {
-  try {
-    const result = await pool.query(
-      `INSERT INTO skills (name, skill_type, source, is_active, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, NOW(), NOW()) 
-       RETURNING id`,
-      [skillName, skillType, 'linkedin', true]
-    );
-    
-    console.log(`✅ Created new skill: ${skillName} (${skillType})`);
-    return result.rows[0].id;
-  } catch (error) {
-    console.error('Error creating skill:', error);
-    throw new Error(`Failed to create skill: ${skillName}`);
-  }
+	try {
+		const result = await pool.query(
+			`INSERT INTO skills (name, source, is_active, created_at, updated_at, embedding) 
+			 VALUES ($1, $2, $3, NOW(), NOW(), $4) 
+			 RETURNING id`,
+			[skillName, 'linkedin', true, '[0.1, 0.2, 0.3, ...]']
+		);
+		
+		console.log(`✅ Created new skill: ${skillName}`);
+		return result.rows[0].id;
+	} catch (error) {
+		console.error('Error creating skill:', error);
+		throw new Error(`Failed to create skill: ${skillName}`);
+	}
 }
 
 // Get all skills (for reference)

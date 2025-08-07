@@ -3,6 +3,7 @@ import { publicProcedure, createTRPCRouter } from "@/lib/trpc/init";
 import { rapidAPIClient } from "@/lib/rapidapi";
 import { mapLinkedInToCandidate, validateCandidateData } from "@/lib/linkedin-mapper";
 import { saveToCache, loadFromCache, isCacheFresh } from "@/lib/cache";
+import { syncLinkedInToDatabase } from "@/lib/database";
 
 // Input schemas
 const singleUrlSchema = z.object({
@@ -20,7 +21,7 @@ const bulkUrlsSchema = z.object({
 });
 
 export const linkedInRouter = createTRPCRouter({
-  // Sync single LinkedIn URL
+  // Sync single LinkedIn URL (returns data only)
   sync: publicProcedure
     .input(singleUrlSchema)
     .mutation(async ({ input }) => {
@@ -81,6 +82,64 @@ export const linkedInRouter = createTRPCRouter({
         
       } catch (error: any) {
         console.error(`❌ Error processing ${linkedinUrl}:`, error.message);
+        return {
+          success: false,
+          error: error.message,
+          linkedinUrl,
+          processedAt: new Date().toISOString(),
+        };
+      }
+    }),
+
+  // Sync single LinkedIn URL and save to database
+  syncAndSave: publicProcedure
+    .input(singleUrlSchema)
+    .mutation(async ({ input }) => {
+      const { linkedinUrl } = input;
+      
+      try {
+        console.log(`🔄 Processing and saving LinkedIn URL: ${linkedinUrl}`);
+        
+        // Check cache first
+        const isFresh = await isCacheFresh(linkedinUrl);
+        let linkedinData;
+        let source = "api";
+        
+        if (isFresh) {
+          console.log(`📋 Loading from cache: ${linkedinUrl}`);
+          linkedinData = await loadFromCache(linkedinUrl);
+          if (linkedinData) {
+            source = "cache";
+          }
+        }
+        
+        // Fetch from RapidAPI if not cached
+        if (!linkedinData) {
+          console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
+          linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+          await saveToCache(linkedinUrl, linkedinData);
+        }
+        
+        // Sync to database
+        const result = await syncLinkedInToDatabase(linkedinData, linkedinUrl);
+        
+        return {
+          success: result.success,
+          source,
+          candidateId: result.candidateId,
+          skillsCreated: result.skillsCreated,
+          skillsLinked: result.skillsLinked,
+          error: result.error,
+          metadata: {
+            linkedinUrl,
+            processedAt: new Date().toISOString(),
+            totalPositions: linkedinData.position?.length || 0,
+            totalSkills: linkedinData.skills?.length || 0,
+          }
+        };
+        
+      } catch (error: any) {
+        console.error(`❌ Error processing and saving ${linkedinUrl}:`, error.message);
         return {
           success: false,
           error: error.message,
@@ -151,6 +210,117 @@ export const linkedInRouter = createTRPCRouter({
             error: result.error,
           });
           results.summary.failed++;
+        }
+        
+        console.log(`✅ Bulk processing complete: ${results.summary.successful} successful, ${results.summary.failed} failed`);
+        
+        return {
+          success: true,
+          results,
+          summary: results.summary,
+          processedAt: new Date().toISOString(),
+        };
+        
+      } catch (error: any) {
+        console.error(`❌ Error in bulk processing:`, error.message);
+        return {
+          success: false,
+          error: error.message,
+          processedAt: new Date().toISOString(),
+        };
+      }
+    }),
+
+  // Sync multiple LinkedIn URLs and save to database
+  syncBulkAndSave: publicProcedure
+    .input(bulkUrlsSchema)
+    .mutation(async ({ input }) => {
+      const { linkedinUrls } = input;
+      
+      try {
+        console.log(`🔄 Processing and saving ${linkedinUrls.length} LinkedIn URLs`);
+        
+        const results = {
+          successful: [] as any[],
+          failed: [] as any[],
+          summary: {
+            total: linkedinUrls.length,
+            successful: 0,
+            failed: 0,
+            fromCache: 0,
+            fromApi: 0,
+            totalSkillsCreated: 0,
+            totalSkillsLinked: 0,
+          }
+        };
+        
+        // Process URLs sequentially to avoid overwhelming the database
+        for (const linkedinUrl of linkedinUrls) {
+          try {
+            console.log(`🔄 Processing: ${linkedinUrl}`);
+            
+            // Check cache first
+            const isFresh = await isCacheFresh(linkedinUrl);
+            let linkedinData;
+            let source = "api";
+            
+            if (isFresh) {
+              console.log(`📋 Loading from cache: ${linkedinUrl}`);
+              linkedinData = await loadFromCache(linkedinUrl);
+              if (linkedinData) {
+                source = "cache";
+              }
+            }
+            
+            // Fetch from RapidAPI if not cached
+            if (!linkedinData) {
+              console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
+              linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+              await saveToCache(linkedinUrl, linkedinData);
+            }
+            
+            // Sync to database
+            const result = await syncLinkedInToDatabase(linkedinData, linkedinUrl);
+            
+            if (result.success) {
+              results.successful.push({
+                linkedinUrl,
+                candidateId: result.candidateId,
+                skillsCreated: result.skillsCreated,
+                skillsLinked: result.skillsLinked,
+                source,
+                metadata: {
+                  processedAt: new Date().toISOString(),
+                  totalPositions: linkedinData.position?.length || 0,
+                  totalSkills: linkedinData.skills?.length || 0,
+                }
+              });
+              
+              results.summary.successful++;
+              results.summary.totalSkillsCreated += result.skillsCreated || 0;
+              results.summary.totalSkillsLinked += result.skillsLinked || 0;
+              
+              if (source === "cache") {
+                results.summary.fromCache++;
+              } else {
+                results.summary.fromApi++;
+              }
+            } else {
+              results.failed.push({
+                linkedinUrl,
+                error: result.error,
+              });
+              results.summary.failed++;
+            }
+            
+          } catch (error: any) {
+            console.error(`❌ Error processing ${linkedinUrl}:`, error.message);
+            results.failed.push({
+              linkedinUrl,
+              error: error.message,
+            });
+            results.summary.failed++;
+          }
         }
         
         console.log(`✅ Bulk processing complete: ${results.summary.successful} successful, ${results.summary.failed} failed`);

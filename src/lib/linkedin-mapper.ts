@@ -39,67 +39,193 @@ export interface LinkedInProfileData {
   }>;
 }
 
-// Map LinkedIn data to your complete candidate schema
-export async function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linkedinUrl: string) {
-  // Get current position (most recent)
-  const currentPosition = linkedinData.position?.[0];
-  
-  // Extract skills as array of strings
-  const skills = linkedinData.skills?.map(skill => skill.name).filter(Boolean) || [];
-  
-  // Get location from geo or current position
-  const location = linkedinData.geo?.full || currentPosition?.location || '';
-  
-  // Create email from name (fallback)
-  const email = linkedinData.firstName && linkedinData.lastName 
-    ? `${linkedinData.firstName.toLowerCase()}.${linkedinData.lastName.toLowerCase()}@example.com`
-    : '';
-
-  // Extract date of birth from bio or use default
-  const dateOfBirth = extractDateOfBirth(linkedinData.summary) || new Date('1990-01-01');
-
-  // Determine category based on job title and skills
-  const category = determineCategory(currentPosition?.title, skills.filter(Boolean) as string[]);
-
-  return {
-    // Required fields from your candidate schema
-    firstName: linkedinData.firstName || '',
-    lastName: linkedinData.lastName || '',
-    email: email,
-    dateOfBirth: dateOfBirth,
-    
-    // Optional fields from candidates table
-    linkedinUrl: linkedinUrl,
-    profileImageUrl: linkedinData.profilePicture || null,
-    workingLocation: location,
-    bio: linkedinData.summary || '',
-    generalJobTitle: currentPosition?.title || '',
-    currentCompany: currentPosition?.companyName || '',
-    category: category,
-    isActive: true,
-    
-    // Related data structures
-    education: mapEducation(linkedinData.educations),
-    skills: await mapSkills(linkedinData.skills),
-    verification: mapVerification(linkedinData.position),
-    availability: mapAvailability(),
-    languages: mapLanguages(linkedinData.summary),
-    certifications: mapCertifications(linkedinData.summary),
-    
-    // Additional metadata
-    _rawLinkedInData: {
-      headline: linkedinData.headline,
-      skills: skills,
-      isTopVoice: linkedinData.isTopVoice,
-      isPremium: linkedinData.isPremium,
-      totalPositions: linkedinData.position?.length || 0,
-      totalSkills: skills.length,
-      location: location,
-      profileId: linkedinData.id,
-      urn: linkedinData.urn,
-      username: linkedinData.username
-    }
+// Updated response structure for main app consumption
+export interface LinkedInSyncResponse {
+  success: boolean;
+  source: 'cache' | 'api';
+  data: {
+    // Candidate profile data (ready for insertion)
+    candidate: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      dateOfBirth: string;
+      linkedinUrl: string;
+      profileImageUrl: string;
+      workingLocation: string;
+      bio: string;
+      generalJobTitle: string;
+      currentCompany: string;
+      category: string | null;
+      isActive: boolean;
+      education: Array<{
+        degreeTitle: string;
+        startYear: number;
+        endYear: number | null;
+        institution: string;
+        location: string | null;
+      }>;
+      skills: Array<{
+        skillId: string | null;
+        skillName: string;
+        isCore: boolean;
+        endorsementsCount: number;
+        skillType: string;
+        source: 'linkedin';
+        needsCreation: boolean;
+      }>;
+      verification: Array<{
+        jobTitle: string;
+        companyName: string;
+        startYear: number;
+        endYear: number | null;
+        description: string[];
+        order: number;
+      }>;
+      availability: {
+        available: boolean;
+        workingHoursDetail: {
+          monday: { from: string; to: string };
+          tuesday: { from: string; to: string };
+          wednesday: { from: string; to: string };
+          thursday: { from: string; to: string };
+          friday: { from: string; to: string };
+        };
+        timezoneOffset: string;
+        hoursMin: number;
+        hoursMax: number;
+        hourlyRateMin: number;
+        hourlyRateMax: number;
+      };
+      languages: Array<{
+        language: string;
+        proficiency: string;
+      }>;
+      certifications: Array<{
+        name: string;
+        issuer: string;
+        issueDate: string;
+        expiryDate: string | null;
+      }>;
+      _rawLinkedInData: any;
+    };
+    // Skills that need to be created (main app responsibility)
+    newSkills: Array<{
+      skillName: string;
+      source: 'linkedin';
+    }>;
+    // Skills that already exist (main app can look up IDs)
+    existingSkills: Array<{
+      skillName: string;
+      source: 'linkedin';
+    }>;
   };
+  validation: {
+    isValid: boolean;
+    errors: string[];
+  };
+  metadata: {
+    linkedinUrl: string;
+    processedAt: string;
+    totalPositions: number;
+    totalSkills: number;
+    newSkillsCount: number;
+    existingSkillsCount: number;
+  };
+}
+
+// Map LinkedIn data to your complete candidate schema
+export async function mapLinkedInToCandidate(
+	linkedinData: any,
+	linkedinUrl: string
+): Promise<LinkedInSyncResponse> {
+	try {
+		// Map skills with database lookup (READ ONLY)
+		const mappedSkills = await mapSkills(linkedinData.skills);
+  
+		// Separate new and existing skills based on database lookup
+		const newSkills = mappedSkills
+			.filter(skill => skill.needsCreation)
+			.map(skill => ({
+				skillName: skill.skillName,
+				source: 'linkedin' as const
+			}));
+			
+		const existingSkills = mappedSkills
+			.filter(skill => !skill.needsCreation)
+			.map(skill => ({
+				skillName: skill.skillName,
+				source: 'linkedin' as const
+			}));
+
+		// Map candidate data
+		const candidate = {
+			firstName: linkedinData.firstName || "",
+			lastName: linkedinData.lastName || "",
+			email: linkedinData.email || "",
+			dateOfBirth: (extractDateOfBirth(linkedinData.bio) || "1990-01-01T00:00:00.000Z").toString(),
+			linkedinUrl: linkedinUrl,
+			profileImageUrl: linkedinData.profileImageUrl || "",
+			workingLocation: linkedinData.location || "",
+			bio: linkedinData.bio || "",
+			generalJobTitle: linkedinData.headline || "",
+			currentCompany: linkedinData.currentCompany || "",
+			category: determineCategory(linkedinData.headline),
+			isActive: true,
+			education: mapEducation(linkedinData.education),
+			skills: mappedSkills,
+			verification: mapVerification(linkedinData.positions),
+			availability: mapAvailability(),
+			languages: mapLanguages(linkedinData.languages),
+			certifications: mapCertifications(linkedinData.certifications),
+			_rawLinkedInData: linkedinData
+		};
+
+		return {
+			success: true,
+			source: 'api',
+			data: {
+				candidate,
+				newSkills,
+				existingSkills
+			},
+			validation: {
+				isValid: true,
+				errors: []
+			},
+			metadata: {
+				linkedinUrl,
+				processedAt: new Date().toISOString(),
+				totalPositions: linkedinData.totalPositions || 0,
+				totalSkills: mappedSkills.length,
+				newSkillsCount: newSkills.length,
+				existingSkillsCount: existingSkills.length
+			}
+		};
+	} catch (error) {
+		console.error("Error mapping LinkedIn data:", error);
+		return {
+			success: false,
+			source: 'api',
+			data: {
+				candidate: {} as any,
+				newSkills: [],
+				existingSkills: []
+			},
+			validation: {
+				isValid: false,
+				errors: [error instanceof Error ? error.message : "Unknown error"]
+			},
+			metadata: {
+				linkedinUrl,
+				processedAt: new Date().toISOString(),
+				totalPositions: 0,
+				totalSkills: 0,
+				newSkillsCount: 0,
+				existingSkillsCount: 0
+			}
+		};
+	}
 }
 
 // Map education data
@@ -117,7 +243,7 @@ function mapEducation(educations?: Array<any>) {
 
 import { findSkillByName, createSkill } from "./database";
 
-// Map skills data to match candidates_skills table structure with skill resolution
+// Map skills data to match candidates_skills table structure (READ-ONLY DATABASE)
 async function mapSkills(skills?: Array<any>): Promise<Array<{
   skillId: string | null;
   skillName: string;
@@ -135,7 +261,7 @@ async function mapSkills(skills?: Array<any>): Promise<Array<{
     const skillName = skill.name;
     const skillType = determineSkillType(skillName);
     
-    // Try to find existing skill in database
+    // Check if skill exists in database (READ ONLY)
     const existingSkill = await findSkillByName(skillName);
     
     if (existingSkill) {
@@ -151,32 +277,17 @@ async function mapSkills(skills?: Array<any>): Promise<Array<{
       });
       console.log(`📋 Found existing skill: ${skillName} (ID: ${existingSkill.id})`);
     } else {
-      // Skill doesn't exist, create new one
-      try {
-        const newSkillId = await createSkill(skillName, skillType);
-        mappedSkills.push({
-          skillId: newSkillId,
-          skillName: skillName,
-          isCore: skill.passedSkillAssessment || false,
-          endorsementsCount: skill.endorsementsCount || 0,
-          skillType: skillType,
-          source: 'linkedin' as const,
-          needsCreation: true
-        });
-        console.log(`🆕 Created new skill: ${skillName} (ID: ${newSkillId})`);
-      } catch (error) {
-        console.error(`❌ Failed to create skill: ${skillName}`, error);
-        // Fallback: return skill without ID
-        mappedSkills.push({
-          skillId: null,
-          skillName: skillName,
-          isCore: skill.passedSkillAssessment || false,
-          endorsementsCount: skill.endorsementsCount || 0,
-          skillType: skillType,
-          source: 'linkedin' as const,
-          needsCreation: true
-        });
-      }
+      // Skill doesn't exist, mark for creation by main app
+      mappedSkills.push({
+        skillId: null,
+        skillName: skillName,
+        isCore: skill.passedSkillAssessment || false,
+        endorsementsCount: skill.endorsementsCount || 0,
+        skillType: skillType,
+        source: 'linkedin' as const,
+        needsCreation: true
+      });
+      console.log(`🆕 New skill identified: ${skillName} (needs creation by main app)`);
     }
   }
   
@@ -260,7 +371,12 @@ function mapLanguages(bio?: string) {
 }
 
 // Map certifications (extract from bio)
-function mapCertifications(bio?: string) {
+function mapCertifications(bio?: string): Array<{
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate: string | null;
+}> {
   if (!bio) return [];
   
   const certificationKeywords = ['certified', 'certification', 'certificate', 'diploma'];
@@ -270,9 +386,10 @@ function mapCertifications(bio?: string) {
   
   if (hasCertifications) {
     return [{
-      title: 'Professional Certification',
-      startYear: 2020,
-      endYear: 2024
+      name: 'Professional Certification',
+      issuer: 'LinkedIn',
+      issueDate: '2020-01-01',
+      expiryDate: null
     }];
   }
   

@@ -10,6 +10,14 @@ export const env = createEnv({
 
 		SMTP_URL: z.string(),
 		SMTP_PORT: z.coerce.number(),
+
+		// RapidAPI Configuration
+		RAPIDAPI_KEY: z.string(),
+		RAPIDAPI_HOST: z.string().default("professional-network-data.p.rapidapi.com"),
+		
+		// Cache Configuration
+		CACHE_EXPIRATION_DAYS: z.coerce.number().default(30),
+		CACHE_DIR: z.string().default("./src/cache/linkedin-profiles"),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

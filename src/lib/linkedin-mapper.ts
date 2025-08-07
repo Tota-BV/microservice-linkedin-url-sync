@@ -115,6 +115,8 @@ function mapEducation(educations?: Array<any>) {
   }));
 }
 
+import { findSkillByName, createSkill } from "./database";
+
 // Map skills data to match candidates_skills table structure with skill resolution
 async function mapSkills(skills?: Array<any>): Promise<Array<{
   skillId: string | null;
@@ -136,32 +138,49 @@ async function mapSkills(skills?: Array<any>): Promise<Array<{
     // Try to find existing skill in database
     const existingSkill = await findSkillByName(skillName);
     
-    mappedSkills.push({
-      skillId: existingSkill?.id || null,
-      skillName: skillName,
-      isCore: skill.passedSkillAssessment || false,
-      endorsementsCount: skill.endorsementsCount || 0,
-      skillType: skillType,
-      source: 'linkedin' as const,
-      needsCreation: !existingSkill
-    });
+    if (existingSkill) {
+      // Skill exists, use existing ID
+      mappedSkills.push({
+        skillId: existingSkill.id,
+        skillName: skillName,
+        isCore: skill.passedSkillAssessment || false,
+        endorsementsCount: skill.endorsementsCount || 0,
+        skillType: skillType,
+        source: 'linkedin' as const,
+        needsCreation: false
+      });
+      console.log(`📋 Found existing skill: ${skillName} (ID: ${existingSkill.id})`);
+    } else {
+      // Skill doesn't exist, create new one
+      try {
+        const newSkillId = await createSkill(skillName, skillType);
+        mappedSkills.push({
+          skillId: newSkillId,
+          skillName: skillName,
+          isCore: skill.passedSkillAssessment || false,
+          endorsementsCount: skill.endorsementsCount || 0,
+          skillType: skillType,
+          source: 'linkedin' as const,
+          needsCreation: true
+        });
+        console.log(`🆕 Created new skill: ${skillName} (ID: ${newSkillId})`);
+      } catch (error) {
+        console.error(`❌ Failed to create skill: ${skillName}`, error);
+        // Fallback: return skill without ID
+        mappedSkills.push({
+          skillId: null,
+          skillName: skillName,
+          isCore: skill.passedSkillAssessment || false,
+          endorsementsCount: skill.endorsementsCount || 0,
+          skillType: skillType,
+          source: 'linkedin' as const,
+          needsCreation: true
+        });
+      }
+    }
   }
   
   return mappedSkills;
-}
-
-// Find existing skill by name (placeholder - would need database connection)
-async function findSkillByName(skillName: string): Promise<{ id: string; name: string; skillType: string } | null> {
-  // This would typically query your skills table
-  // For now, return null to indicate skill needs to be created
-  return null;
-}
-
-// Create new skill (placeholder - would need database connection)
-async function createSkill(skillName: string, skillType: string): Promise<string> {
-  // This would typically insert into your skills table
-  // For now, return a placeholder UUID
-  return `skill-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 // Determine skill type based on skill name

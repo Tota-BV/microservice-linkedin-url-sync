@@ -6,6 +6,9 @@ export const env = createEnv({
 		// Server Configuration
 		PORT: z.coerce.number().default(3001),
 		
+		// Database Configuration
+		DATABASE_URL: z.string().url(),
+		
 		// RapidAPI Configuration
 		RAPIDAPI_KEY: z.string(),
 		RAPIDAPI_HOST: z.string().default("professional-network-data.p.rapidapi.com"),

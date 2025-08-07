@@ -21,18 +21,46 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 
 	// Health check endpoint
 	if (req.url === "/health") {
-		res.writeHead(200, { "Content-Type": "application/json" });
-		res.end(JSON.stringify({ 
-			status: "ok", 
-			timestamp: new Date().toISOString(),
-			version: "1.0.0",
-			features: {
-				caching: true,
-				rapidApi: true,
-				bulkProcessing: true,
-				dataMapping: true,
-			}
-		}));
+		try {
+			// Test database connection
+			const { checkDatabaseSchema } = await import('./lib/database');
+			const dbStatus = await checkDatabaseSchema();
+			
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				status: "ok", 
+				timestamp: new Date().toISOString(),
+				version: "1.0.0",
+				features: {
+					caching: true,
+					rapidApi: true,
+					bulkProcessing: true,
+					dataMapping: true,
+				},
+				database: {
+					connected: dbStatus,
+					status: dbStatus ? "ready" : "schema_mismatch"
+				}
+			}));
+		} catch (error) {
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				status: "ok", 
+				timestamp: new Date().toISOString(),
+				version: "1.0.0",
+				features: {
+					caching: true,
+					rapidApi: true,
+					bulkProcessing: true,
+					dataMapping: true,
+				},
+				database: {
+					connected: false,
+					status: "error",
+					error: error instanceof Error ? error.message : "Unknown error"
+				}
+			}));
+		}
 		return;
 	}
 

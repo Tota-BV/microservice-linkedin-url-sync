@@ -1,32 +1,31 @@
 # Database Connection Test
 
-## Database URL
+## Test Staging Database Connection
+
+### Connection String
 ```
-postgresql://postgres:dp5pqu75t6shqs7u0d9npb1j2tvkgd7z@pgvector.railway.internal:5432/railway
+postgresql://[REDACTED]
 ```
 
-## Test Script
+### Test Commands
 ```bash
-# Test database connection
-psql "postgresql://postgres:dp5pqu75t6shqs7u0d9npb1j2tvkgd7z@pgvector.railway.internal:5432/railway" -c "\dt"
+# List tables
+psql "postgresql://[REDACTED]" -c "\dt"
 
 # Check skills table
-psql "postgresql://postgres:dp5pqu75t6shqs7u0d9npb1j2tvkgd7z@pgvector.railway.internal:5432/railway" -c "SELECT * FROM skills LIMIT 5;"
+psql "postgresql://[REDACTED]" -c "SELECT * FROM skills LIMIT 5;"
 
 # Check table structure
-psql "postgresql://postgres:dp5pqu75t6shqs7u0d9npb1j2tvkgd7z@pgvector.railway.internal:5432/railway" -c "\d skills"
+psql "postgresql://[REDACTED]" -c "\d skills"
 ```
 
-## Railway Environment Variables
+### Environment Variables
 ```bash
-# Voor microservice (confident-ambition)
-NODE_ENV=production
-DATABASE_URL_PRODUCTION=postgresql://postgres:dp5pqu75t6shqs7u0d9npb1j2tvkgd7z@pgvector.railway.internal:5432/railway
-RAPIDAPI_KEY=jouw_rapidapi_key_hier
+# Set production database URL
+DATABASE_URL_PRODUCTION=postgresql://[REDACTED]
 ```
 
-## Volgende stappen
-1. ✅ Database URL gekopieerd
-2. 🔄 Environment variables instellen in Railway
-3. 🔄 Database connection testen
-4. 🔄 Microservice deployen en testen
+## Results
+- ✅ Database connection successful
+- ✅ Skills table exists
+- ✅ Can query skills data

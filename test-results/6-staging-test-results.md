@@ -61,7 +61,7 @@ https://microservice-linkedin-url-sync-staging.up.railway.app
 ### **✅ Fixed: Database Connection**
 - **Status:** ✅ WORKING
 - **Log:** `🔗 Using staging database` visible in logs
-- **URL:** `postgresql://postgres:dp5pqu75t6shqs7u0d9npb1j2tvkgd7z@trolley.proxy.rlwy.net:47589/railway`
+- **URL:** `postgresql://[REDACTED]`
 
 ### **❌ Remaining Issue: Skill Resolution**
 - Skills worden correct geëxtraheerd uit LinkedIn

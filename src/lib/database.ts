@@ -578,6 +578,160 @@ export async function insertLinkedInDataToDatabase(linkedinUrl: string): Promise
 	}
 }
 
+// Complete database insertion with correct order (skills first, then candidate)
+export async function insertLinkedInDataWithOrder(linkedinUrl: string): Promise<{
+	success: boolean;
+	candidateId?: string;
+	skillsCreated?: number;
+	skillsLinked?: number;
+	error?: string;
+	duplicate?: boolean;
+}> {
+	const client = await pool.connect();
+	
+	try {
+		// Start transaction
+		await client.query('BEGIN');
+		
+		// Import the mapping function
+		const { mapLinkedInToCandidate } = await import('./linkedin-mapper');
+		
+		// Check if candidate already exists
+		const existingCandidate = await client.query(
+			'SELECT id FROM candidates WHERE linkedin_url = $1',
+			[linkedinUrl]
+		);
+		
+		if (existingCandidate.rows.length > 0) {
+			console.log(`⚠️ Candidate already exists: ${linkedinUrl}`);
+			await client.query('ROLLBACK');
+			return {
+				success: true,
+				candidateId: existingCandidate.rows[0].id,
+				skillsCreated: 0,
+				skillsLinked: 0,
+				duplicate: true
+			};
+		}
+		
+		// Get LinkedIn data
+		const linkedinData = await getLinkedInData(linkedinUrl);
+		
+		// Map LinkedIn data to candidate format
+		const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+		
+		// STEP 1: Create new skills first (dependency for candidate)
+		let skillsCreated = 0;
+		for (const skillToCreate of candidateData.databaseOperations.skillsToCreate) {
+			try {
+				const skillResult = await client.query(
+					`INSERT INTO skills (id, name, source, is_active, created_at, updated_at)
+					 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+					 ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+					 RETURNING id`,
+					[skillToCreate.skillName, 'linkedin', true]
+				);
+				
+				skillsCreated++;
+				console.log(`🆕 Created skill: ${skillToCreate.skillName}`);
+			} catch (error) {
+				console.error(`❌ Error creating skill ${skillToCreate.skillName}:`, error);
+				// Continue with other skills instead of failing completely
+			}
+		}
+		
+		// STEP 2: Insert candidate profile (after skills are created)
+		const candidateResult = await client.query(
+			`INSERT INTO candidates (
+				first_name, last_name, email, date_of_birth, linkedin_url,
+				profile_image_url, working_location, bio, general_job_title,
+				current_company, category, is_active
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			RETURNING id`,
+			[
+				candidateData.candidateProfile.firstName,
+				candidateData.candidateProfile.lastName,
+				candidateData.candidateProfile.email,
+				candidateData.candidateProfile.dateOfBirth,
+				candidateData.candidateProfile.linkedinUrl,
+				candidateData.candidateProfile.profileImageUrl,
+				candidateData.candidateProfile.workingLocation,
+				candidateData.candidateProfile.bio,
+				candidateData.candidateProfile.generalJobTitle,
+				candidateData.candidateProfile.currentCompany,
+				candidateData.candidateProfile.category,
+				candidateData.candidateProfile.isActive
+			]
+		);
+		
+		const candidateId = candidateResult.rows[0].id;
+		console.log(`✅ Created candidate: ${candidateData.candidateProfile.firstName} ${candidateData.candidateProfile.lastName} (ID: ${candidateId})`);
+		
+		// STEP 3: Link skills to candidate (after both skills and candidate exist)
+		let skillsLinked = 0;
+		for (const skill of candidateData.candidateProfile.skills) {
+			try {
+				// Find skill by name (including newly created ones)
+				const skillResult = await client.query(
+					'SELECT id FROM skills WHERE name ILIKE $1 AND is_active = true',
+					[skill.skillName]
+				);
+				
+				if (skillResult.rows.length > 0) {
+					const skillId = skillResult.rows[0].id;
+					
+					// Link skill to candidate
+					await client.query(
+						`INSERT INTO candidate_skills (
+							candidate_id, skill_id, is_core, endorsements_count, source
+						) VALUES ($1, $2, $3, $4, $5)
+						ON CONFLICT (candidate_id, skill_id) DO UPDATE SET
+							is_core = EXCLUDED.is_core,
+							endorsements_count = EXCLUDED.endorsements_count,
+							updated_at = NOW()`,
+						[
+							candidateId,
+							skillId,
+							skill.isCore,
+							skill.endorsementsCount,
+							skill.source
+						]
+					);
+					
+					skillsLinked++;
+					console.log(`🔗 Linked skill: ${skill.skillName} to candidate`);
+				}
+			} catch (error) {
+				console.error(`❌ Error linking skill ${skill.skillName}:`, error);
+				// Continue with other skills instead of failing completely
+			}
+		}
+		
+		// Commit transaction
+		await client.query('COMMIT');
+		
+		console.log(`✅ Database insertion complete: Candidate ${candidateId} with ${skillsLinked} skills (${skillsCreated} new)`);
+		
+		return {
+			success: true,
+			candidateId,
+			skillsCreated,
+			skillsLinked
+		};
+		
+	} catch (error) {
+		// Rollback transaction on error
+		await client.query('ROLLBACK');
+		console.error('❌ Error in database insertion:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : 'Unknown error'
+		};
+	} finally {
+		client.release();
+	}
+}
+
 // Helper function to get LinkedIn data
 async function getLinkedInData(linkedinUrl: string) {
 	try {

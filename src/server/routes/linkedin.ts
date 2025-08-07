@@ -3,7 +3,8 @@ import { publicProcedure, createTRPCRouter } from "@/lib/trpc/init";
 import { rapidAPIClient } from "@/lib/rapidapi";
 import { mapLinkedInToCandidate, validateCandidateData } from "@/lib/linkedin-mapper";
 import { saveToCache, loadFromCache, isCacheFresh } from "@/lib/cache";
-import { checkDatabaseSchema, insertLinkedInDataToDatabase } from "@/lib/database";
+import { checkDatabaseSchema, insertLinkedInDataWithOrder } from "@/lib/database";
+import { saveJsonToVolume, getVolumeInfo, listJsonFiles } from "@/lib/volume-storage";
 
 // Input schemas
 const singleUrlSchema = z.object({
@@ -143,7 +144,7 @@ export const linkedInRouter = createTRPCRouter({
         }
         
         // Insert to database
-        const result = await insertLinkedInDataToDatabase(linkedinUrl);
+        const result = await insertLinkedInDataWithOrder(linkedinUrl);
         
         return {
           success: result.success,
@@ -263,6 +264,109 @@ export const linkedInRouter = createTRPCRouter({
       }
     }),
 
+  // Sync with JSON backup and database insert
+  syncWithBackup: publicProcedure
+    .input(singleUrlSchema)
+    .mutation(async ({ input }) => {
+      const { linkedinUrl } = input;
+      
+      try {
+        console.log(`🔄 Processing LinkedIn URL with backup: ${linkedinUrl}`);
+        
+        // Check database schema compatibility
+        const schemaCompatible = await checkDatabaseSchema();
+        if (!schemaCompatible) {
+          return {
+            success: false,
+            error: "Database schema not compatible",
+            linkedinUrl,
+            processedAt: new Date().toISOString(),
+          };
+        }
+        
+        // Check cache first
+        const isFresh = await isCacheFresh(linkedinUrl);
+        let linkedinData;
+        let source = "api";
+        
+        if (isFresh) {
+          console.log(`📋 Loading from cache: ${linkedinUrl}`);
+          linkedinData = await loadFromCache(linkedinUrl);
+          if (linkedinData) {
+            source = "cache";
+          }
+        }
+        
+        // Fetch from RapidAPI if not cached
+        if (!linkedinData) {
+          console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
+          linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+          await saveToCache(linkedinUrl, linkedinData);
+        }
+        
+        // Map to candidate format
+        const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+        
+        // STEP 1: Save JSON to volume (always do this first)
+        let jsonFile = null;
+        let jsonSaved = false;
+        try {
+          jsonFile = await saveJsonToVolume(candidateData, linkedinUrl);
+          jsonSaved = true;
+          console.log(`💾 JSON backup saved: ${jsonFile}`);
+        } catch (jsonError) {
+          console.error(`❌ Failed to save JSON backup:`, jsonError);
+          // Continue with database insert even if JSON save fails
+        }
+        
+        // STEP 2: Insert to database (skills first, then candidate)
+        let dbResult = null;
+        let databaseInserted = false;
+        try {
+          dbResult = await insertLinkedInDataWithOrder(linkedinUrl);
+          databaseInserted = dbResult.success;
+          console.log(`💾 Database insert result:`, dbResult);
+        } catch (dbError) {
+          console.error(`❌ Failed to insert to database:`, dbError);
+          // JSON backup is still available as fallback
+        }
+        
+        // Return comprehensive result
+        return {
+          success: jsonSaved || databaseInserted, // Success if either worked
+          source,
+          jsonBackup: {
+            saved: jsonSaved,
+            filepath: jsonFile,
+            error: jsonSaved ? null : "Failed to save JSON backup"
+          },
+          databaseInsert: {
+            inserted: databaseInserted,
+            candidateId: dbResult?.candidateId,
+            skillsCreated: dbResult?.skillsCreated || 0,
+            skillsLinked: dbResult?.skillsLinked || 0,
+            duplicate: dbResult?.duplicate || false,
+            error: databaseInserted ? null : dbResult?.error || "Failed to insert to database"
+          },
+          metadata: {
+            linkedinUrl,
+            processedAt: new Date().toISOString(),
+            totalPositions: linkedinData.position?.length || 0,
+            totalSkills: linkedinData.skills?.length || 0,
+          }
+        };
+        
+      } catch (error: any) {
+        console.error(`❌ Error processing ${linkedinUrl}:`, error.message);
+        return {
+          success: false,
+          error: error.message,
+          linkedinUrl,
+          processedAt: new Date().toISOString(),
+        };
+      }
+    }),
+
   // Get cache info for debugging
   getCacheInfo: publicProcedure
     .input(singleUrlSchema)
@@ -285,6 +389,27 @@ export const linkedInRouter = createTRPCRouter({
           success: false,
           error: error.message,
           linkedinUrl,
+        };
+      }
+    }),
+
+  // Get volume info for debugging
+  getVolumeInfo: publicProcedure
+    .query(async () => {
+      try {
+        const volumeInfo = await getVolumeInfo();
+        const jsonFiles = await listJsonFiles();
+        
+        return {
+          success: true,
+          volumeInfo,
+          jsonFiles: jsonFiles.slice(0, 10), // Show first 10 files
+          totalFiles: jsonFiles.length
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message,
         };
       }
     }),

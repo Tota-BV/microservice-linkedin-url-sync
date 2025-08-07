@@ -63,7 +63,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						console.log(`📋 Loading from cache: ${linkedinUrl}`);
 						const cachedData = await loadFromCache(linkedinUrl);
 						if (cachedData) {
-							const candidateData = mapLinkedInToCandidate(cachedData, linkedinUrl);
+							const candidateData = await mapLinkedInToCandidate(cachedData, linkedinUrl);
 							const validation = validateCandidateData(candidateData);
 							
 							res.writeHead(200, { "Content-Type": "application/json" });
@@ -91,7 +91,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					await saveToCache(linkedinUrl, linkedinData);
 					
 					// Map to candidate format
-					const candidateData = mapLinkedInToCandidate(linkedinData, linkedinUrl);
+					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
 					const validation = validateCandidateData(candidateData);
 					
 					res.writeHead(200, { "Content-Type": "application/json" });
@@ -166,7 +166,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					// Process successful results
 					for (const result of apiResults.successful) {
 						try {
-							const candidateData = mapLinkedInToCandidate(result.data, result.url);
+							const candidateData = await mapLinkedInToCandidate(result.data, result.url);
 							const validation = validateCandidateData(candidateData);
 							
 							results.successful.push({

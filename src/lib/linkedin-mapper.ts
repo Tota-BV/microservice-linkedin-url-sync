@@ -40,7 +40,7 @@ export interface LinkedInProfileData {
 }
 
 // Map LinkedIn data to your complete candidate schema
-export function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linkedinUrl: string) {
+export async function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linkedinUrl: string) {
   // Get current position (most recent)
   const currentPosition = linkedinData.position?.[0];
   
@@ -59,7 +59,7 @@ export function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linked
   const dateOfBirth = extractDateOfBirth(linkedinData.summary) || new Date('1990-01-01');
 
   // Determine category based on job title and skills
-  const category = determineCategory(currentPosition?.title, skills);
+  const category = determineCategory(currentPosition?.title, skills.filter(Boolean) as string[]);
 
   return {
     // Required fields from your candidate schema
@@ -80,7 +80,7 @@ export function mapLinkedInToCandidate(linkedinData: LinkedInProfileData, linked
     
     // Related data structures
     education: mapEducation(linkedinData.educations),
-    skills: mapSkills(linkedinData.skills),
+    skills: await mapSkills(linkedinData.skills),
     verification: mapVerification(linkedinData.position),
     availability: mapAvailability(),
     languages: mapLanguages(linkedinData.summary),
@@ -115,15 +115,81 @@ function mapEducation(educations?: Array<any>) {
   }));
 }
 
-// Map skills data
-function mapSkills(skills?: Array<any>) {
+// Map skills data to match candidates_skills table structure with skill resolution
+async function mapSkills(skills?: Array<any>): Promise<Array<{
+  skillId: string | null;
+  skillName: string;
+  isCore: boolean;
+  endorsementsCount: number;
+  skillType: string;
+  source: 'linkedin';
+  needsCreation: boolean;
+}>> {
   if (!skills || skills.length === 0) return [];
   
-  return skills.map(skill => ({
-    skillName: skill.name,
-    isCore: skill.passedSkillAssessment || false,
-    endorsementsCount: skill.endorsementsCount || 0
-  }));
+  const mappedSkills = [];
+  
+  for (const skill of skills) {
+    const skillName = skill.name;
+    const skillType = determineSkillType(skillName);
+    
+    // Try to find existing skill in database
+    const existingSkill = await findSkillByName(skillName);
+    
+    mappedSkills.push({
+      skillId: existingSkill?.id || null,
+      skillName: skillName,
+      isCore: skill.passedSkillAssessment || false,
+      endorsementsCount: skill.endorsementsCount || 0,
+      skillType: skillType,
+      source: 'linkedin' as const,
+      needsCreation: !existingSkill
+    });
+  }
+  
+  return mappedSkills;
+}
+
+// Find existing skill by name (placeholder - would need database connection)
+async function findSkillByName(skillName: string): Promise<{ id: string; name: string; skillType: string } | null> {
+  // This would typically query your skills table
+  // For now, return null to indicate skill needs to be created
+  return null;
+}
+
+// Create new skill (placeholder - would need database connection)
+async function createSkill(skillName: string, skillType: string): Promise<string> {
+  // This would typically insert into your skills table
+  // For now, return a placeholder UUID
+  return `skill-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Determine skill type based on skill name
+function determineSkillType(skillName: string): string {
+  const skill = skillName.toLowerCase();
+  
+  // Language skills
+  if (['javascript', 'python', 'java', 'c++', 'c#', 'php', 'ruby', 'go', 'rust', 'swift', 'kotlin', 'typescript'].includes(skill)) {
+    return 'language';
+  }
+  
+  // Library/Framework skills
+  if (['react', 'vue', 'angular', 'node.js', 'express', 'django', 'spring', 'laravel', 'jquery', 'bootstrap', 'tailwind'].includes(skill)) {
+    return 'library';
+  }
+  
+  // Storage skills
+  if (['mysql', 'postgresql', 'mongodb', 'redis', 'elasticsearch', 'dynamodb', 'firebase', 'aws', 'azure', 'gcp'].includes(skill)) {
+    return 'storage';
+  }
+  
+  // Tool skills
+  if (['git', 'docker', 'kubernetes', 'jenkins', 'jira', 'figma', 'adobe', 'photoshop', 'illustrator'].includes(skill)) {
+    return 'tool';
+  }
+  
+  // Default to other
+  return 'other';
 }
 
 // Map verification data (work experience)

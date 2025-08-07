@@ -2,6 +2,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import { rapidAPIClient } from "./lib/rapidapi";
 import { mapLinkedInToCandidate, validateCandidateData } from "./lib/linkedin-mapper";
 import { saveToCache, loadFromCache, isCacheFresh } from "./lib/cache";
+import { checkDatabaseSchema, insertLinkedInDataWithOrder } from "./lib/database";
+import { saveJsonToVolume } from "./lib/volume-storage";
 import { env } from "./lib/env.server";
 
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
@@ -224,6 +226,135 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// LinkedIn sync with backup and database insert endpoint
+	if (req.url === "/api/linkedin/sync-with-backup" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					if (!linkedinUrl || !linkedinUrl.includes("linkedin.com")) {
+						res.writeHead(400, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ 
+							success: false, 
+							error: "Invalid LinkedIn URL" 
+						}));
+						return;
+					}
+
+					console.log(`🔄 Processing LinkedIn URL with backup: ${linkedinUrl}`);
+					
+					// Check database schema compatibility
+					const schemaCompatible = await checkDatabaseSchema();
+					if (!schemaCompatible) {
+						res.writeHead(500, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({
+							success: false,
+							error: "Database schema not compatible",
+							linkedinUrl,
+							processedAt: new Date().toISOString(),
+						}));
+						return;
+					}
+					
+					// Check cache first
+					const isFresh = await isCacheFresh(linkedinUrl);
+					let linkedinData;
+					let source = "api";
+					
+					if (isFresh) {
+						console.log(`📋 Loading from cache: ${linkedinUrl}`);
+						linkedinData = await loadFromCache(linkedinUrl);
+						if (linkedinData) {
+							source = "cache";
+						}
+					}
+					
+					// Fetch from RapidAPI if not cached
+					if (!linkedinData) {
+						console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
+						linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+						await saveToCache(linkedinUrl, linkedinData);
+					}
+					
+					// Map to candidate format
+					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+					
+					// STEP 1: Save JSON to volume (always do this first)
+					let jsonFile = null;
+					let jsonSaved = false;
+					try {
+						jsonFile = await saveJsonToVolume(candidateData, linkedinUrl);
+						jsonSaved = true;
+						console.log(`💾 JSON backup saved: ${jsonFile}`);
+					} catch (jsonError) {
+						console.error(`❌ Failed to save JSON backup:`, jsonError);
+						// Continue with database insert even if JSON save fails
+					}
+					
+					// STEP 2: Insert to database (skills first, then candidate)
+					let dbResult = null;
+					let databaseInserted = false;
+					try {
+						dbResult = await insertLinkedInDataWithOrder(linkedinUrl);
+						databaseInserted = dbResult.success;
+						console.log(`💾 Database insert result:`, dbResult);
+					} catch (dbError) {
+						console.error(`❌ Failed to insert to database:`, dbError);
+						// JSON backup is still available as fallback
+					}
+					
+					// Return comprehensive result
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: jsonSaved || databaseInserted, // Success if either worked
+						source,
+						jsonBackup: {
+							saved: jsonSaved,
+							filepath: jsonFile,
+							error: jsonSaved ? null : "Failed to save JSON backup"
+						},
+						databaseInsert: {
+							inserted: databaseInserted,
+							candidateId: dbResult?.candidateId,
+							skillsCreated: dbResult?.skillsCreated || 0,
+							skillsLinked: dbResult?.skillsLinked || 0,
+							duplicate: dbResult?.duplicate || false,
+							error: databaseInserted ? null : dbResult?.error || "Failed to insert to database"
+						},
+						metadata: {
+							linkedinUrl,
+							processedAt: new Date().toISOString(),
+							totalPositions: linkedinData.position?.length || 0,
+							totalSkills: linkedinData.skills?.length || 0,
+						}
+					}));
+					
+				} catch (error: any) {
+					console.error(`❌ Error processing LinkedIn URL:`, error.message);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error.message,
+						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
 	// 404 for other routes
 	res.writeHead(404, { "Content-Type": "application/json" });
 	res.end(JSON.stringify({ 
@@ -232,7 +363,8 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		availableEndpoints: [
 			"GET /health",
 			"POST /api/linkedin/sync",
-			"POST /api/linkedin/sync-bulk"
+			"POST /api/linkedin/sync-bulk",
+			"POST /api/linkedin/sync-with-backup"
 		]
 	}));
 });

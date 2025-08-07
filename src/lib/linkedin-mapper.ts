@@ -39,18 +39,19 @@ export interface LinkedInProfileData {
   }>;
 }
 
-// Updated response structure for main app consumption
+// Updated response structure for webapp database insertion
 export interface LinkedInSyncResponse {
   success: boolean;
   source: 'cache' | 'api';
   databaseOperations: {
-    // Skills that need to be created (main app responsibility)
+    // Skills that need to be created (webapp responsibility)
     skillsToCreate: Array<{
       skillName: string;
       source: 'linkedin';
     }>;
   };
   candidateProfile: {
+    // Basic candidate fields (for candidates table)
     firstName: string;
     lastName: string;
     email: string;
@@ -63,6 +64,8 @@ export interface LinkedInSyncResponse {
     currentCompany: string;
     category: string | null;
     isActive: boolean;
+    
+    // Education data (for candidates_education table)
     education: Array<{
       degreeTitle: string;
       startYear: number;
@@ -70,14 +73,18 @@ export interface LinkedInSyncResponse {
       institution: string;
       location: string | null;
     }>;
+    
+    // Skills data (for candidates_skills table)
     skills: Array<{
-      skillId: string | null;
+      skillId: string | null; // null if skill needs to be created
       skillName: string;
       isCore: boolean;
       endorsementsCount: number;
       skillType: string;
       source: 'linkedin';
     }>;
+    
+    // Verification data (for candidates_verification table)
     verification: Array<{
       jobTitle: string;
       companyName: string;
@@ -86,6 +93,8 @@ export interface LinkedInSyncResponse {
       description: string[];
       order: number;
     }>;
+    
+    // Availability data (for candidates_availability table)
     availability: {
       available: boolean;
       workingHoursDetail: {
@@ -101,16 +110,21 @@ export interface LinkedInSyncResponse {
       hourlyRateMin: number;
       hourlyRateMax: number;
     };
+    
+    // Languages data (for candidates_languages table)
     languages: Array<{
       language: string;
       proficiency: string;
     }>;
+    
+    // Certifications data (for candidates_certifications table)
     certifications: Array<{
       name: string;
       issuer: string;
       issueDate: string;
       expiryDate: string | null;
     }>;
+    
     _rawLinkedInData: any;
   };
   validation: {

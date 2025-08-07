@@ -43,6 +43,38 @@ export interface Candidate {
 	updated_at: Date;
 }
 
+// Check if database schema matches existing structure
+export async function checkDatabaseSchema(): Promise<boolean> {
+	try {
+		console.log('🔍 Checking existing database schema...');
+		
+		// Check if required tables exist
+		const requiredTables = ['candidates', 'skills', 'candidates_skills'];
+		
+		for (const tableName of requiredTables) {
+			const tableExists = await pool.query(`
+				SELECT EXISTS (
+					SELECT FROM information_schema.tables 
+					WHERE table_schema = 'public' 
+					AND table_name = $1
+				);
+			`, [tableName]);
+			
+			if (!tableExists.rows[0].exists) {
+				console.error(`❌ Required table '${tableName}' does not exist`);
+				return false;
+			}
+		}
+		
+		console.log('✅ Database schema is compatible');
+		return true;
+		
+	} catch (error) {
+		console.error('❌ Error checking database schema:', error);
+		return false;
+	}
+}
+
 // Find skill by name (works with existing table structure)
 export async function findSkillByName(skillName: string): Promise<Skill | null> {
 	try {
@@ -393,5 +425,185 @@ export async function ensureDatabaseSchema(): Promise<boolean> {
 	} catch (error) {
 		console.error('❌ Error ensuring database schema:', error);
 		return false;
+	}
+}
+
+// Complete database insertion workflow for webapp
+export async function insertLinkedInDataToDatabase(linkedinUrl: string): Promise<{
+	success: boolean;
+	candidateId?: string;
+	skillsCreated?: number;
+	skillsLinked?: number;
+	error?: string;
+}> {
+	const client = await pool.connect();
+	
+	try {
+		// Start transaction
+		await client.query('BEGIN');
+		
+		// Import the mapping function
+		const { mapLinkedInToCandidate } = await import('./linkedin-mapper');
+		
+		// Check if candidate already exists
+		const existingCandidate = await client.query(
+			'SELECT id FROM candidates WHERE linkedin_url = $1',
+			[linkedinUrl]
+		);
+		
+		if (existingCandidate.rows.length > 0) {
+			console.log(`⚠️ Candidate already exists: ${linkedinUrl}`);
+			await client.query('ROLLBACK');
+			return {
+				success: true,
+				candidateId: existingCandidate.rows[0].id,
+				skillsCreated: 0,
+				skillsLinked: 0
+			};
+		}
+		
+		// Get LinkedIn data (you'll need to pass this in or fetch it)
+		// For now, we'll assume it's passed as parameter
+		const linkedinData = await getLinkedInData(linkedinUrl);
+		
+		// Map LinkedIn data to candidate format
+		const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+		
+		// Step 1: Create new skills first
+		let skillsCreated = 0;
+		for (const skillToCreate of candidateData.databaseOperations.skillsToCreate) {
+			try {
+				const skillResult = await client.query(
+					`INSERT INTO skills (id, name, source, is_active, created_at, updated_at)
+					 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+					 ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+					 RETURNING id`,
+					[skillToCreate.skillName, 'linkedin', true]
+				);
+				
+				skillsCreated++;
+				console.log(`🆕 Created skill: ${skillToCreate.skillName}`);
+			} catch (error) {
+				console.error(`❌ Error creating skill ${skillToCreate.skillName}:`, error);
+			}
+		}
+		
+		// Step 2: Insert candidate profile
+		const candidateResult = await client.query(
+			`INSERT INTO candidates (
+				first_name, last_name, email, date_of_birth, linkedin_url,
+				profile_image_url, working_location, bio, general_job_title,
+				current_company, category, is_active
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			RETURNING id`,
+			[
+				candidateData.candidateProfile.firstName,
+				candidateData.candidateProfile.lastName,
+				candidateData.candidateProfile.email,
+				candidateData.candidateProfile.dateOfBirth,
+				candidateData.candidateProfile.linkedinUrl,
+				candidateData.candidateProfile.profileImageUrl,
+				candidateData.candidateProfile.workingLocation,
+				candidateData.candidateProfile.bio,
+				candidateData.candidateProfile.generalJobTitle,
+				candidateData.candidateProfile.currentCompany,
+				candidateData.candidateProfile.category,
+				candidateData.candidateProfile.isActive
+			]
+		);
+		
+		const candidateId = candidateResult.rows[0].id;
+		console.log(`✅ Created candidate: ${candidateData.candidateProfile.firstName} ${candidateData.candidateProfile.lastName}`);
+		
+		// Step 3: Link skills to candidate
+		let skillsLinked = 0;
+		for (const skill of candidateData.candidateProfile.skills) {
+			try {
+				// Find skill by name (including newly created ones)
+				const skillResult = await client.query(
+					'SELECT id FROM skills WHERE name ILIKE $1 AND is_active = true',
+					[skill.skillName]
+				);
+				
+				if (skillResult.rows.length > 0) {
+					const skillId = skillResult.rows[0].id;
+					
+					// Link skill to candidate
+					await client.query(
+						`INSERT INTO candidates_skills (
+							candidate_id, skill_id, is_core, endorsements_count, source
+						) VALUES ($1, $2, $3, $4, $5)
+						ON CONFLICT (candidate_id, skill_id) DO UPDATE SET
+							is_core = EXCLUDED.is_core,
+							endorsements_count = EXCLUDED.endorsements_count`,
+						[
+							candidateId,
+							skillId,
+							skill.isCore,
+							skill.endorsementsCount,
+							skill.source
+						]
+					);
+					
+					skillsLinked++;
+					console.log(`🔗 Linked skill: ${skill.skillName} to candidate`);
+				}
+			} catch (error) {
+				console.error(`❌ Error linking skill ${skill.skillName}:`, error);
+			}
+		}
+		
+		// Commit transaction
+		await client.query('COMMIT');
+		
+		console.log(`✅ Database insertion complete: Candidate ${candidateId} with ${skillsLinked} skills (${skillsCreated} new)`);
+		
+		return {
+			success: true,
+			candidateId,
+			skillsCreated,
+			skillsLinked
+		};
+		
+	} catch (error) {
+		// Rollback transaction on error
+		await client.query('ROLLBACK');
+		console.error('❌ Error in database insertion:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : 'Unknown error'
+		};
+	} finally {
+		client.release();
+	}
+}
+
+// Helper function to get LinkedIn data
+async function getLinkedInData(linkedinUrl: string) {
+	try {
+		// Check cache first
+		const { isCacheFresh, loadFromCache, saveToCache } = await import('./cache');
+		const { rapidAPIClient } = await import('./rapidapi');
+		
+		const isFresh = await isCacheFresh(linkedinUrl);
+		if (isFresh) {
+			console.log(`📋 Loading from cache: ${linkedinUrl}`);
+			const cachedData = await loadFromCache(linkedinUrl);
+			if (cachedData) {
+				return cachedData;
+			}
+		}
+		
+		// Fetch from RapidAPI
+		console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
+		const linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+		
+		// Save to cache
+		await saveToCache(linkedinUrl, linkedinData);
+		
+		return linkedinData;
+	} catch (error) {
+		console.error('Error getting LinkedIn data:', error);
+		throw error;
 	}
 }

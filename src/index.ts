@@ -1,10 +1,10 @@
-import { createServer } from "http";
+import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import { rapidAPIClient } from "./lib/rapidapi";
 import { mapLinkedInToCandidate, validateCandidateData } from "./lib/linkedin-mapper";
 import { saveToCache, loadFromCache, isCacheFresh } from "./lib/cache";
 import { env } from "./lib/env.server";
 
-const server = createServer(async (req, res) => {
+const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
 	// CORS headers
 	res.setHeader("Access-Control-Allow-Origin", "*");
 	res.setHeader("Access-Control-Request-Method", "*");
@@ -38,7 +38,7 @@ const server = createServer(async (req, res) => {
 	if (req.url === "/api/linkedin/sync" && req.method === "POST") {
 		try {
 			let body = "";
-			req.on("data", chunk => {
+			req.on("data", (chunk: Buffer) => {
 				body += chunk.toString();
 			});
 			
@@ -132,7 +132,7 @@ const server = createServer(async (req, res) => {
 	if (req.url === "/api/linkedin/sync-bulk" && req.method === "POST") {
 		try {
 			let body = "";
-			req.on("data", chunk => {
+			req.on("data", (chunk: Buffer) => {
 				body += chunk.toString();
 			});
 			
@@ -237,7 +237,7 @@ const server = createServer(async (req, res) => {
 	}));
 });
 
-const port = process.env.PORT || 3001;
+const port = env.PORT;
 
 server.listen(port, () => {
 	console.log(`🚀 LinkedIn Parser Microservice running on port ${port}`);

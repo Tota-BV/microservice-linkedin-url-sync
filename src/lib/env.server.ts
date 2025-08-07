@@ -3,14 +3,9 @@ import { z } from "zod";
 
 export const env = createEnv({
 	server: {
-		SERVER_URL: z.string().url().optional(),
-		DATABASE_URL: z.string().url(),
-		REDIS_URL: z.string().url(),
-		BETTER_AUTH_SECRET: z.string(),
-
-		SMTP_URL: z.string(),
-		SMTP_PORT: z.coerce.number(),
-
+		// Server Configuration
+		PORT: z.coerce.number().default(3001),
+		
 		// RapidAPI Configuration
 		RAPIDAPI_KEY: z.string(),
 		RAPIDAPI_HOST: z.string().default("professional-network-data.p.rapidapi.com"),

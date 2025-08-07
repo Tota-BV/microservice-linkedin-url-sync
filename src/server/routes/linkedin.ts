@@ -122,7 +122,8 @@ export const linkedInRouter = createTRPCRouter({
             
             results.successful.push({
               linkedinUrl: result.url,
-              data: candidateData,
+              databaseOperations: candidateData.databaseOperations,
+              candidateProfile: candidateData.candidateProfile,
               validation,
               metadata: {
                 processedAt: new Date().toISOString(),

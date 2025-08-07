@@ -36,12 +36,13 @@ export const linkedInRouter = createTRPCRouter({
           const cachedData = await loadFromCache(linkedinUrl);
           if (cachedData) {
             const candidateData = await mapLinkedInToCandidate(cachedData, linkedinUrl);
-            const validation = validateCandidateData(candidateData);
+            const validation = validateCandidateData(candidateData.candidateProfile);
             
             return {
               success: true,
               source: "cache",
-              data: candidateData,
+              databaseOperations: candidateData.databaseOperations,
+              candidateProfile: candidateData.candidateProfile,
               validation,
               metadata: {
                 linkedinUrl,
@@ -62,12 +63,13 @@ export const linkedInRouter = createTRPCRouter({
         
         // Map to candidate format
         const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
-        const validation = validateCandidateData(candidateData);
+        const validation = validateCandidateData(candidateData.candidateProfile);
         
         return {
           success: true,
           source: "api",
-          data: candidateData,
+          databaseOperations: candidateData.databaseOperations,
+          candidateProfile: candidateData.candidateProfile,
           validation,
           metadata: {
             linkedinUrl,
@@ -116,7 +118,7 @@ export const linkedInRouter = createTRPCRouter({
         for (const result of apiResults.successful) {
           try {
             const candidateData = await mapLinkedInToCandidate(result.data, result.url);
-            const validation = validateCandidateData(candidateData);
+            const validation = validateCandidateData(candidateData.candidateProfile);
             
             results.successful.push({
               linkedinUrl: result.url,

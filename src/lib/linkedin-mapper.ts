@@ -43,82 +43,75 @@ export interface LinkedInProfileData {
 export interface LinkedInSyncResponse {
   success: boolean;
   source: 'cache' | 'api';
-  data: {
-    // Candidate profile data (ready for insertion)
-    candidate: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      dateOfBirth: string;
-      linkedinUrl: string;
-      profileImageUrl: string;
-      workingLocation: string;
-      bio: string;
-      generalJobTitle: string;
-      currentCompany: string;
-      category: string | null;
-      isActive: boolean;
-      education: Array<{
-        degreeTitle: string;
-        startYear: number;
-        endYear: number | null;
-        institution: string;
-        location: string | null;
-      }>;
-      skills: Array<{
-        skillId: string | null;
-        skillName: string;
-        isCore: boolean;
-        endorsementsCount: number;
-        skillType: string;
-        source: 'linkedin';
-        needsCreation: boolean;
-      }>;
-      verification: Array<{
-        jobTitle: string;
-        companyName: string;
-        startYear: number;
-        endYear: number | null;
-        description: string[];
-        order: number;
-      }>;
-      availability: {
-        available: boolean;
-        workingHoursDetail: {
-          monday: { from: string; to: string };
-          tuesday: { from: string; to: string };
-          wednesday: { from: string; to: string };
-          thursday: { from: string; to: string };
-          friday: { from: string; to: string };
-        };
-        timezoneOffset: string;
-        hoursMin: number;
-        hoursMax: number;
-        hourlyRateMin: number;
-        hourlyRateMax: number;
-      };
-      languages: Array<{
-        language: string;
-        proficiency: string;
-      }>;
-      certifications: Array<{
-        name: string;
-        issuer: string;
-        issueDate: string;
-        expiryDate: string | null;
-      }>;
-      _rawLinkedInData: any;
-    };
+  databaseOperations: {
     // Skills that need to be created (main app responsibility)
-    newSkills: Array<{
+    skillsToCreate: Array<{
       skillName: string;
       source: 'linkedin';
     }>;
-    // Skills that already exist (main app can look up IDs)
-    existingSkills: Array<{
+  };
+  candidateProfile: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    dateOfBirth: string;
+    linkedinUrl: string;
+    profileImageUrl: string;
+    workingLocation: string;
+    bio: string;
+    generalJobTitle: string;
+    currentCompany: string;
+    category: string | null;
+    isActive: boolean;
+    education: Array<{
+      degreeTitle: string;
+      startYear: number;
+      endYear: number | null;
+      institution: string;
+      location: string | null;
+    }>;
+    skills: Array<{
+      skillId: string | null;
       skillName: string;
+      isCore: boolean;
+      endorsementsCount: number;
+      skillType: string;
       source: 'linkedin';
     }>;
+    verification: Array<{
+      jobTitle: string;
+      companyName: string;
+      startYear: number;
+      endYear: number | null;
+      description: string[];
+      order: number;
+    }>;
+    availability: {
+      available: boolean;
+      workingHoursDetail: {
+        monday: { from: string; to: string };
+        tuesday: { from: string; to: string };
+        wednesday: { from: string; to: string };
+        thursday: { from: string; to: string };
+        friday: { from: string; to: string };
+      };
+      timezoneOffset: string;
+      hoursMin: number;
+      hoursMax: number;
+      hourlyRateMin: number;
+      hourlyRateMax: number;
+    };
+    languages: Array<{
+      language: string;
+      proficiency: string;
+    }>;
+    certifications: Array<{
+      name: string;
+      issuer: string;
+      issueDate: string;
+      expiryDate: string | null;
+    }>;
+    _rawLinkedInData: any;
   };
   validation: {
     isValid: boolean;
@@ -129,8 +122,7 @@ export interface LinkedInSyncResponse {
     processedAt: string;
     totalPositions: number;
     totalSkills: number;
-    newSkillsCount: number;
-    existingSkillsCount: number;
+    skillsToCreateCount: number;
   };
 }
 
@@ -143,16 +135,9 @@ export async function mapLinkedInToCandidate(
 		// Map skills with database lookup (READ ONLY)
 		const mappedSkills = await mapSkills(linkedinData.skills);
   
-		// Separate new and existing skills based on database lookup
-		const newSkills = mappedSkills
+		// Skills that need to be created (main app responsibility)
+		const skillsToCreate = mappedSkills
 			.filter(skill => skill.needsCreation)
-			.map(skill => ({
-				skillName: skill.skillName,
-				source: 'linkedin' as const
-			}));
-			
-		const existingSkills = mappedSkills
-			.filter(skill => !skill.needsCreation)
 			.map(skill => ({
 				skillName: skill.skillName,
 				source: 'linkedin' as const
@@ -173,7 +158,14 @@ export async function mapLinkedInToCandidate(
 			category: determineCategory(linkedinData.headline),
 			isActive: true,
 			education: mapEducation(linkedinData.education),
-			skills: mappedSkills,
+			skills: mappedSkills.map(skill => ({
+				skillId: skill.skillId,
+				skillName: skill.skillName,
+				isCore: skill.isCore,
+				endorsementsCount: skill.endorsementsCount,
+				skillType: skill.skillType,
+				source: skill.source
+			})),
 			verification: mapVerification(linkedinData.positions),
 			availability: mapAvailability(),
 			languages: mapLanguages(linkedinData.languages),
@@ -184,11 +176,10 @@ export async function mapLinkedInToCandidate(
 		return {
 			success: true,
 			source: 'api',
-			data: {
-				candidate,
-				newSkills,
-				existingSkills
+			databaseOperations: {
+				skillsToCreate
 			},
+			candidateProfile: candidate,
 			validation: {
 				isValid: true,
 				errors: []
@@ -198,8 +189,7 @@ export async function mapLinkedInToCandidate(
 				processedAt: new Date().toISOString(),
 				totalPositions: linkedinData.totalPositions || 0,
 				totalSkills: mappedSkills.length,
-				newSkillsCount: newSkills.length,
-				existingSkillsCount: existingSkills.length
+				skillsToCreateCount: skillsToCreate.length
 			}
 		};
 	} catch (error) {
@@ -207,11 +197,10 @@ export async function mapLinkedInToCandidate(
 		return {
 			success: false,
 			source: 'api',
-			data: {
-				candidate: {} as any,
-				newSkills: [],
-				existingSkills: []
+			databaseOperations: {
+				skillsToCreate: []
 			},
+			candidateProfile: {} as any,
 			validation: {
 				isValid: false,
 				errors: [error instanceof Error ? error.message : "Unknown error"]
@@ -221,8 +210,7 @@ export async function mapLinkedInToCandidate(
 				processedAt: new Date().toISOString(),
 				totalPositions: 0,
 				totalSkills: 0,
-				newSkillsCount: 0,
-				existingSkillsCount: 0
+				skillsToCreateCount: 0
 			}
 		};
 	}

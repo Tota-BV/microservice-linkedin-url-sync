@@ -98,10 +98,10 @@ export async function findSkillByName(skillName: string): Promise<Skill | null> 
 export async function createSkill(skillName: string, skillType: string): Promise<string> {
 	try {
 		const result = await pool.query(
-			`INSERT INTO skills (id, name, source, is_active, created_at, updated_at, embedding) 
-			 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW(), $4) 
+			`INSERT INTO skills (id, name, source, is_active, created_at, updated_at) 
+			 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW()) 
 			 RETURNING id`,
-			[skillName, 'linkedin', true, '[0.1, 0.2, 0.3, ...]']
+			[skillName, 'linkedin', true]
 		);
 		
 		console.log(`✅ Created new skill: ${skillName}`);

@@ -897,15 +897,25 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					
 					if (testType === "skill") {
 						// Test skill creation
+						const { skillNames = ["Test Skill"] } = JSON.parse(body);
 						const { createSkill } = await import('./lib/database');
-						const skillId = await createSkill("Test Skill", "linkedin");
+						
+						const results = [];
+						for (const skillName of skillNames) {
+							try {
+								const skillId = await createSkill(skillName, "linkedin");
+								results.push({ skillName, skillId, success: true });
+							} catch (error) {
+								results.push({ skillName, error: error instanceof Error ? error.message : 'Unknown error', success: false });
+							}
+						}
 						
 						res.writeHead(200, { "Content-Type": "application/json" });
 						res.end(JSON.stringify({
 							success: true,
 							testType: "skill",
-							skillId,
-							message: "Skill created successfully",
+							results,
+							message: "Skills test completed",
 							processedAt: new Date().toISOString(),
 						}));
 					} else if (testType === "candidate") {

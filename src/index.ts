@@ -64,6 +64,136 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// Initialize cache with real RapidAPI data
+	if (req.url === "/api/cache/init" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrls } = JSON.parse(body);
+					
+					console.log(`🔄 Initializing cache with ${linkedinUrls.length} LinkedIn URLs`);
+					
+					const results = {
+						successful: [] as any[],
+						failed: [] as any[],
+						summary: {
+							total: linkedinUrls.length,
+							successful: 0,
+							failed: 0,
+						}
+					};
+					
+					// Process URLs one by one to avoid rate limits
+					for (const linkedinUrl of linkedinUrls) {
+						try {
+							console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
+							const linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+							
+							// Save to cache
+							await saveToCache(linkedinUrl, linkedinData);
+							
+							results.successful.push({
+								linkedinUrl,
+								cached: true,
+								totalPositions: linkedinData.position?.length || 0,
+								totalSkills: linkedinData.skills?.length || 0,
+							});
+							
+							results.summary.successful++;
+							
+							// Wait 1 second between requests to avoid rate limits
+							await new Promise(resolve => setTimeout(resolve, 1000));
+							
+						} catch (error: any) {
+							console.error(`❌ Error fetching ${linkedinUrl}:`, error.message);
+							results.failed.push({
+								linkedinUrl,
+								error: error.message,
+							});
+							results.summary.failed++;
+						}
+					}
+					
+					console.log(`✅ Cache initialization complete: ${results.summary.successful} successful, ${results.summary.failed} failed`);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						results,
+						summary: results.summary,
+						processedAt: new Date().toISOString(),
+					}));
+					
+				} catch (error: any) {
+					console.error(`❌ Error in cache initialization:`, error.message);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error.message,
+						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
+	// Get cache status
+	if (req.url === "/api/cache/status" && req.method === "GET") {
+		try {
+			const { isCacheFresh, loadFromCache } = await import('./lib/cache');
+			
+			// List of URLs to check
+			const testUrls = [
+				"https://www.linkedin.com/in/satya-nadella/",
+				"https://www.linkedin.com/in/julian-klumpers-383a20145/",
+				"https://www.linkedin.com/in/jeffweiner08/"
+			];
+			
+			const cacheStatus = [];
+			
+			for (const url of testUrls) {
+				const isFresh = await isCacheFresh(url);
+				const cachedData = await loadFromCache(url);
+				
+				cacheStatus.push({
+					url,
+					exists: !!cachedData,
+					isFresh,
+					totalPositions: cachedData?.position?.length || 0,
+					totalSkills: cachedData?.skills?.length || 0,
+				});
+			}
+			
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: true,
+				cacheStatus,
+				processedAt: new Date().toISOString(),
+			}));
+			
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: false,
+				error: error.message,
+				processedAt: new Date().toISOString(),
+			}));
+		}
+		return;
+	}
+
 	// LinkedIn sync endpoint
 	if (req.url === "/api/linkedin/sync" && req.method === "POST") {
 		try {

@@ -801,6 +801,73 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// Mock skills test endpoint
+	if (req.url === "/api/linkedin/sync-mock-skills" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { profileType = "unique-skills-test" } = JSON.parse(body);
+					
+					console.log(`🔄 Testing skills with mock data: ${profileType}`);
+					
+					// Get mock data
+					const { getMockData } = await import('./lib/mock-data');
+					const mockData = getMockData(profileType);
+					
+					// Map to candidate format
+					const { mapLinkedInToCandidate } = await import('./lib/linkedin-mapper');
+					const candidateData = await mapLinkedInToCandidate(mockData, "https://www.linkedin.com/in/mock-test/");
+					
+					// Test skills insertion
+					let skillsResult = null;
+					try {
+						const { insertSkillsOnly } = await import('./lib/database');
+						console.log(`💾 Testing skills-only insert with mock data`);
+						skillsResult = await insertSkillsOnly("https://www.linkedin.com/in/mock-test/");
+						console.log(`💾 Skills insert result:`, skillsResult);
+					} catch (skillsError) {
+						console.error(`❌ Skills test failed:`, skillsError);
+					}
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						source: "mock",
+						databaseOperations: candidateData.databaseOperations,
+						candidateProfile: candidateData.candidateProfile,
+						skillsTest: skillsResult,
+						metadata: {
+							profileType,
+							processedAt: new Date().toISOString(),
+							totalSkills: mockData.skills?.length || 0,
+						}
+					}));
+					
+				} catch (error: any) {
+					console.error(`❌ Error in mock skills test:`, error.message);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error.message,
+						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
 	// Database test endpoint
 	if (req.url === "/api/test/database" && req.method === "POST") {
 		try {

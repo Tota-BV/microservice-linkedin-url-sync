@@ -117,10 +117,40 @@ export const mockProfiles = {
         "endorsementsCount": 30
       }
     ]
-  }
+  },
+  "unique-skills-test": {
+		id: 999999,
+		urn: "ACoAAATEST123",
+		username: "unique-skills-test",
+		firstName: "Test",
+		lastName: "Candidate",
+		isPremium: false,
+		headline: "Test Candidate with Unique Skills",
+		geo: {
+			country: "Netherlands",
+			city: "Amsterdam",
+			full: "Amsterdam, Netherlands",
+			countryCode: "nl"
+		},
+		educations: [],
+		position: [],
+		fullPositions: [],
+		skills: [
+			{ name: "UNIQUE_SKILL_ALPHA_123", passedSkillAssessment: false, endorsementsCount: 1 },
+			{ name: "UNIQUE_SKILL_BETA_456", passedSkillAssessment: false, endorsementsCount: 2 },
+			{ name: "UNIQUE_SKILL_GAMMA_789", passedSkillAssessment: false, endorsementsCount: 3 },
+			{ name: "React", passedSkillAssessment: true, endorsementsCount: 5 },
+			{ name: "JavaScript", passedSkillAssessment: false, endorsementsCount: 4 }
+		],
+		projects: {},
+		supportedLocales: [{ country: "NL", language: "nl" }],
+		multiLocaleFirstName: { nl: "Test" },
+		multiLocaleLastName: { nl: "Candidate" },
+		multiLocaleHeadline: { nl: "Test Candidate with Unique Skills" }
+	}
 };
 
 // Get mock data by profile type
 export function getMockData(profileType: string = "satya-nadella") {
-  return mockProfiles[profileType as keyof typeof mockProfiles] || mockLinkedInData;
+  return mockProfiles[profileType] || mockProfiles["satya-nadella"];
 }

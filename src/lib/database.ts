@@ -746,6 +746,117 @@ export async function insertLinkedInDataWithOrder(linkedinUrl: string): Promise<
 	}
 }
 
+// Insert only skills (without candidate profile) - SAFE VERSION
+export async function insertSkillsOnly(linkedinUrl: string): Promise<{
+	success: boolean;
+	skillsCreated?: number;
+	skillsFound?: number;
+	totalSkills?: number;
+	skillsCreatedDetails?: Array<{
+		skillName: string;
+		skillId: string;
+		source: string;
+	}>;
+	skillsFoundDetails?: Array<{
+		skillName: string;
+		skillId: string;
+	}>;
+	error?: string;
+}> {
+	const client = await pool.connect();
+	
+	try {
+		console.log(`🔄 Inserting skills only for: ${linkedinUrl}`);
+		
+		// Get LinkedIn data
+		const linkedinData = await getLinkedInData(linkedinUrl);
+		
+		// Map LinkedIn data to candidate format
+		const { mapLinkedInToCandidate } = await import('./linkedin-mapper');
+		const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+		
+		let skillsCreated = 0;
+		let skillsFound = 0;
+		const skillsCreatedDetails: Array<{skillName: string; skillId: string; source: string}> = [];
+		const skillsFoundDetails: Array<{skillName: string; skillId: string}> = [];
+		
+		// Process each skill that needs to be created
+		for (const skillToCreate of candidateData.databaseOperations.skillsToCreate) {
+			try {
+				console.log(`🔄 Processing skill: ${skillToCreate.skillName}`);
+				
+				// SAFE: Check if skill already exists (case insensitive)
+				const existingSkill = await client.query(
+					'SELECT id, name FROM skills WHERE name ILIKE $1 AND is_active = true',
+					[skillToCreate.skillName]
+				);
+				
+				if (existingSkill.rows.length > 0) {
+					// Skill already exists - SAFE: just log it
+					const existingSkillId = existingSkill.rows[0].id;
+					const existingSkillName = existingSkill.rows[0].name;
+					
+					console.log(`✅ Skill already exists: ${existingSkillName} (ID: ${existingSkillId})`);
+					skillsFound++;
+					
+					skillsFoundDetails.push({
+						skillName: existingSkillName,
+						skillId: existingSkillId
+					});
+				} else {
+					// SAFE: Create new skill with conflict handling
+					const skillResult = await client.query(
+						`INSERT INTO skills (id, name, source, is_active, created_at, updated_at)
+						 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+						 ON CONFLICT (name) DO UPDATE SET 
+						   updated_at = NOW(),
+						   is_active = true
+						 RETURNING id, name`,
+						[skillToCreate.skillName, 'linkedin', true]
+					);
+					
+					const newSkillId = skillResult.rows[0].id;
+					const newSkillName = skillResult.rows[0].name;
+					
+					skillsCreated++;
+					console.log(`🆕 Created new skill: ${newSkillName} (ID: ${newSkillId})`);
+					
+					skillsCreatedDetails.push({
+						skillName: newSkillName,
+						skillId: newSkillId,
+						source: 'linkedin'
+					});
+				}
+				
+			} catch (error) {
+				console.error(`❌ Error processing skill ${skillToCreate.skillName}:`, error);
+				// SAFE: Continue with other skills instead of failing completely
+			}
+		}
+		
+		const totalSkills = skillsCreated + skillsFound;
+		console.log(`✅ Skills processing complete: ${skillsCreated} created, ${skillsFound} found, ${totalSkills} total`);
+		
+		return {
+			success: true,
+			skillsCreated,
+			skillsFound,
+			totalSkills,
+			skillsCreatedDetails,
+			skillsFoundDetails
+		};
+		
+	} catch (error) {
+		console.error('❌ Error in skills insertion:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : 'Unknown error'
+		};
+	} finally {
+		client.release();
+	}
+}
+
 // Helper function to get LinkedIn data
 async function getLinkedInData(linkedinUrl: string) {
 	try {

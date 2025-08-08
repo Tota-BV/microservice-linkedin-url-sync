@@ -204,7 +204,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 			
 			req.on("end", async () => {
 				try {
-					const { linkedinUrl, testDatabase = false } = JSON.parse(body);
+					const { linkedinUrl, testDatabase = false, testSkillsOnly = false } = JSON.parse(body);
 					
 					if (!linkedinUrl || !linkedinUrl.includes("linkedin.com")) {
 						res.writeHead(400, { "Content-Type": "application/json" });
@@ -215,7 +215,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						return;
 					}
 
-					console.log(`🔄 Processing single LinkedIn URL: ${linkedinUrl}${testDatabase ? ' (with database test)' : ''}`);
+					console.log(`🔄 Processing single LinkedIn URL: ${linkedinUrl}${testDatabase ? ' (with database test)' : ''}${testSkillsOnly ? ' (skills only)' : ''}`);
 					
 					// Check cache first
 					const isFresh = await isCacheFresh(linkedinUrl);
@@ -255,6 +255,19 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
 					const validation = validateCandidateData(candidateData.candidateProfile);
 					
+					// Skills-only test if requested
+					let skillsResult = null;
+					if (testSkillsOnly) {
+						try {
+							const { insertSkillsOnly } = await import('./lib/database');
+							console.log(`💾 Testing skills-only insert for: ${linkedinUrl}`);
+							skillsResult = await insertSkillsOnly(linkedinUrl);
+							console.log(`💾 Skills insert result:`, skillsResult);
+						} catch (skillsError) {
+							console.error(`❌ Skills test failed:`, skillsError);
+						}
+					}
+					
 					// Database test if requested
 					let dbResult = null;
 					if (testDatabase) {
@@ -281,6 +294,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						databaseOperations: candidateData.databaseOperations,
 						candidateProfile: candidateData.candidateProfile,
 						validation,
+						skillsTest: testSkillsOnly ? skillsResult : null,
 						databaseTest: testDatabase ? {
 							success: dbResult?.success || false,
 							candidateId: dbResult?.candidateId,

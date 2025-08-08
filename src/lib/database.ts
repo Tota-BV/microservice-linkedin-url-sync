@@ -15,7 +15,7 @@ export const db = drizzle(pool);
 export interface Skill {
 	id: string;
 	name: string;
-	source: 'esco' | 'user' | 'admin' | 'linkedin';
+	source: 'esco' | 'user' | 'admin';
 	is_active: boolean;
 	esco_id?: string;
 	abbreviations?: string[];
@@ -101,7 +101,7 @@ export async function createSkill(skillName: string, skillType: string): Promise
 			`INSERT INTO skills (id, name, source, is_active, created_at, updated_at) 
 			 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW()) 
 			 RETURNING id`,
-			[skillName, 'linkedin', true]
+			[skillName, 'user', true]
 		);
 		
 		console.log(`✅ Created new skill: ${skillName}`);
@@ -282,7 +282,7 @@ export async function syncLinkedInToDatabase(linkedinData: any, linkedinUrl: str
 						 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
 						 ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
 						 RETURNING id`,
-						[skill.skillName, 'linkedin', true]
+						[skill.skillName, 'user', true]
 					);
 					
 					skillId = skillResult.rows[0].id;
@@ -787,6 +787,8 @@ export async function insertSkillsOnly(linkedinUrl: string, mockData?: any): Pro
 		const skillsFoundDetails: Array<{skillName: string; skillId: string}> = [];
 		
 		// Process each skill that needs to be created
+		console.log(`🔍 Processing ${candidateData.databaseOperations.skillsToCreate.length} skills to create`);
+		
 		for (const skillToCreate of candidateData.databaseOperations.skillsToCreate) {
 			try {
 				console.log(`🔄 Processing skill: ${skillToCreate.skillName}`);
@@ -796,6 +798,8 @@ export async function insertSkillsOnly(linkedinUrl: string, mockData?: any): Pro
 					'SELECT id, name FROM skills WHERE name ILIKE $1 AND is_active = true',
 					[skillToCreate.skillName]
 				);
+				
+				console.log(`🔍 Found ${existingSkill.rows.length} existing skills for: ${skillToCreate.skillName}`);
 				
 				if (existingSkill.rows.length > 0) {
 					// Skill already exists - SAFE: just log it
@@ -811,6 +815,8 @@ export async function insertSkillsOnly(linkedinUrl: string, mockData?: any): Pro
 					});
 				} else {
 					// SAFE: Create new skill with conflict handling
+					console.log(`🆕 Creating new skill: ${skillToCreate.skillName}`);
+					
 					const skillResult = await client.query(
 						`INSERT INTO skills (id, name, source, is_active, created_at, updated_at)
 						 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
@@ -818,7 +824,7 @@ export async function insertSkillsOnly(linkedinUrl: string, mockData?: any): Pro
 						   updated_at = NOW(),
 						   is_active = true
 						 RETURNING id, name`,
-						[skillToCreate.skillName, 'linkedin', true]
+						[skillToCreate.skillName, 'user', true]
 					);
 					
 					const newSkillId = skillResult.rows[0].id;
@@ -830,7 +836,7 @@ export async function insertSkillsOnly(linkedinUrl: string, mockData?: any): Pro
 					skillsCreatedDetails.push({
 						skillName: newSkillName,
 						skillId: newSkillId,
-						source: 'linkedin'
+						source: 'user'
 					});
 				}
 				

@@ -47,7 +47,7 @@ export interface LinkedInSyncResponse {
     // Skills that need to be created (webapp responsibility)
     skillsToCreate: Array<{
       skillName: string;
-      source: 'linkedin';
+      source: 'user';
     }>;
   };
   candidateProfile: {
@@ -81,7 +81,7 @@ export interface LinkedInSyncResponse {
       isCore: boolean;
       endorsementsCount: number;
       skillType: string;
-      source: 'linkedin';
+      source: 'user';
     }>;
     
     // Verification data (for candidates_verification table)
@@ -154,7 +154,7 @@ export async function mapLinkedInToCandidate(
 			.filter(skill => skill.needsCreation)
 			.map(skill => ({
 				skillName: skill.skillName,
-				source: 'linkedin' as const
+				source: 'user' as const
 			}));
 
 		// Map candidate data
@@ -252,7 +252,7 @@ async function mapSkills(skills?: Array<any>): Promise<Array<{
   isCore: boolean;
   endorsementsCount: number;
   skillType: string;
-  source: 'linkedin';
+  source: 'user';
   needsCreation: boolean;
 }>> {
   if (!skills || skills.length === 0) return [];
@@ -274,7 +274,7 @@ async function mapSkills(skills?: Array<any>): Promise<Array<{
         isCore: skill.passedSkillAssessment || false,
         endorsementsCount: skill.endorsementsCount || 0,
         skillType: skillType,
-        source: 'linkedin' as const,
+        source: 'user' as const,
         needsCreation: false
       });
       console.log(`📋 Found existing skill: ${skillName} (ID: ${existingSkill.id})`);
@@ -286,7 +286,7 @@ async function mapSkills(skills?: Array<any>): Promise<Array<{
         isCore: skill.passedSkillAssessment || false,
         endorsementsCount: skill.endorsementsCount || 0,
         skillType: skillType,
-        source: 'linkedin' as const,
+        source: 'user' as const,
         needsCreation: true
       });
       console.log(`🆕 New skill identified: ${skillName} (needs creation by main app)`);

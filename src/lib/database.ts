@@ -641,31 +641,41 @@ export async function insertLinkedInDataWithOrder(linkedinUrl: string): Promise<
 		}
 		
 		// STEP 2: Insert candidate profile (after skills are created)
-		const candidateResult = await client.query(
-			`INSERT INTO candidates (
-				first_name, last_name, email, date_of_birth, linkedin_url,
-				profile_image_url, working_location, bio, general_job_title,
-				current_company, category, is_active
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-			RETURNING id`,
-			[
-				candidateData.candidateProfile.firstName,
-				candidateData.candidateProfile.lastName,
-				candidateData.candidateProfile.email,
-				candidateData.candidateProfile.dateOfBirth,
-				candidateData.candidateProfile.linkedinUrl,
-				candidateData.candidateProfile.profileImageUrl,
-				candidateData.candidateProfile.workingLocation,
-				candidateData.candidateProfile.bio,
-				candidateData.candidateProfile.generalJobTitle,
-				candidateData.candidateProfile.currentCompany,
-				candidateData.candidateProfile.category,
-				candidateData.candidateProfile.isActive
-			]
-		);
-		
-		const candidateId = candidateResult.rows[0].id;
-		console.log(`✅ Created candidate: ${candidateData.candidateProfile.firstName} ${candidateData.candidateProfile.lastName} (ID: ${candidateId})`);
+		let candidateId;
+		try {
+			const candidateResult = await client.query(
+				`INSERT INTO candidates (
+					first_name, last_name, email, date_of_birth, linkedin_url,
+					profile_image_url, working_location, bio, general_job_title,
+					current_company, category, is_active
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+				RETURNING id`,
+				[
+					candidateData.candidateProfile.firstName,
+					candidateData.candidateProfile.lastName,
+					candidateData.candidateProfile.email,
+					candidateData.candidateProfile.dateOfBirth,
+					candidateData.candidateProfile.linkedinUrl,
+					candidateData.candidateProfile.profileImageUrl,
+					candidateData.candidateProfile.workingLocation,
+					candidateData.candidateProfile.bio,
+					candidateData.candidateProfile.generalJobTitle,
+					candidateData.candidateProfile.currentCompany,
+					candidateData.candidateProfile.category,
+					candidateData.candidateProfile.isActive
+				]
+			);
+			
+			candidateId = candidateResult.rows[0].id;
+			console.log(`✅ Created candidate: ${candidateData.candidateProfile.firstName} ${candidateData.candidateProfile.lastName} (ID: ${candidateId})`);
+		} catch (error) {
+			console.error(`❌ Error creating candidate:`, error);
+			await client.query('ROLLBACK');
+			return {
+				success: false,
+				error: `Failed to create candidate: ${error instanceof Error ? error.message : 'Unknown error'}`
+			};
+		}
 		
 		// STEP 3: Link skills to candidate (after both skills and candidate exist)
 		let skillsLinked = 0;
@@ -721,7 +731,11 @@ export async function insertLinkedInDataWithOrder(linkedinUrl: string): Promise<
 		
 	} catch (error) {
 		// Rollback transaction on error
-		await client.query('ROLLBACK');
+		try {
+			await client.query('ROLLBACK');
+		} catch (rollbackError) {
+			console.error('❌ Error during rollback:', rollbackError);
+		}
 		console.error('❌ Error in database insertion:', error);
 		return {
 			success: false,

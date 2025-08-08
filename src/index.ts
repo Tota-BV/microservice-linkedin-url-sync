@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "http";
 import { rapidAPIClient } from "./lib/rapidapi";
 import { mapLinkedInToCandidate, validateCandidateData } from "./lib/linkedin-mapper";
 import { saveToCache, loadFromCache, isCacheFresh } from "./lib/cache";
-import { checkDatabaseSchema, insertLinkedInDataWithOrder } from "./lib/database";
+// Removed imports that no longer exist in database.ts
 import { saveJsonToVolume } from "./lib/volume-storage";
 import { env } from "./lib/env.server";
 
@@ -59,6 +59,437 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					status: "error",
 					error: error instanceof Error ? error.message : "Unknown error"
 				}
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint to check skills in database
+	if (req.url === "/api/test/skills" && req.method === "GET") {
+		try {
+			const { getAllSkills } = await import('./lib/database');
+			const skills = await getAllSkills();
+			
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: true,
+				totalSkills: skills.length,
+				skills: skills.slice(0, 10) // Show first 10 skills
+			}));
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error"
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint to check candidate skills
+	if (req.url === "/api/test/candidate-skills" && req.method === "GET") {
+		try {
+			const { getCandidateSkills } = await import('./lib/database');
+			const candidateId = "b3679811-1997-4978-b212-c64f981dcb87"; // Arnand's ID
+			const skills = await getCandidateSkills(candidateId);
+			
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: true,
+				candidateId,
+				totalSkills: skills.length,
+				skills: skills
+			}));
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error"
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint for Step 5a: Education insertion only
+	if (req.url === "/api/test/step5a-education" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					const { findCandidateByLinkedInUrl, insertEducation } = await import('./lib/database');
+					const { loadFromCache } = await import('./lib/cache');
+					const { mapLinkedInToCandidate } = await import('./lib/linkedin-mapper');
+					
+					const candidate = await findCandidateByLinkedInUrl(linkedinUrl);
+					if (!candidate) {
+						res.writeHead(404, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ success: false, error: "Candidate not found" }));
+						return;
+					}
+					
+					// Get LinkedIn data from cache or API
+					const linkedinData = await loadFromCache(linkedinUrl);
+					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+					
+					const result = await insertEducation(candidate.id, candidateData);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						result,
+						processedAt: new Date().toISOString()
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
+						processedAt: new Date().toISOString()
+					}));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				processedAt: new Date().toISOString()
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint for Step 5b: Certifications insertion only
+	if (req.url === "/api/test/step5b-certifications" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					const { findCandidateByLinkedInUrl, insertCertifications } = await import('./lib/database');
+					const { loadFromCache } = await import('./lib/cache');
+					const { mapLinkedInToCandidate } = await import('./lib/linkedin-mapper');
+					
+					const candidate = await findCandidateByLinkedInUrl(linkedinUrl);
+					if (!candidate) {
+						res.writeHead(404, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ success: false, error: "Candidate not found" }));
+						return;
+					}
+					
+					const linkedinData = await loadFromCache(linkedinUrl);
+					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+					
+					const result = await insertCertifications(candidate.id, candidateData);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						result,
+						processedAt: new Date().toISOString()
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
+						processedAt: new Date().toISOString()
+					}));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				processedAt: new Date().toISOString()
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint for Step 5c: Languages insertion only
+	if (req.url === "/api/test/step5c-languages" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					const { findCandidateByLinkedInUrl, insertLanguages } = await import('./lib/database');
+					const { loadFromCache } = await import('./lib/cache');
+					const { mapLinkedInToCandidate } = await import('./lib/linkedin-mapper');
+					
+					const candidate = await findCandidateByLinkedInUrl(linkedinUrl);
+					if (!candidate) {
+						res.writeHead(404, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ success: false, error: "Candidate not found" }));
+						return;
+					}
+					
+					const linkedinData = await loadFromCache(linkedinUrl);
+					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+					
+					const result = await insertLanguages(candidate.id, candidateData);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						result,
+						processedAt: new Date().toISOString()
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
+						processedAt: new Date().toISOString()
+					}));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				processedAt: new Date().toISOString()
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint for Step 5d: Verification (work experience) insertion only
+	if (req.url === "/api/test/step5d-verification" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					const { findCandidateByLinkedInUrl, insertVerification } = await import('./lib/database');
+					const { loadFromCache } = await import('./lib/cache');
+					const { mapLinkedInToCandidate } = await import('./lib/linkedin-mapper');
+					
+					const candidate = await findCandidateByLinkedInUrl(linkedinUrl);
+					if (!candidate) {
+						res.writeHead(404, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ success: false, error: "Candidate not found" }));
+						return;
+					}
+					
+					const linkedinData = await loadFromCache(linkedinUrl);
+					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+					
+					const result = await insertVerification(candidate.id, candidateData);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						result,
+						processedAt: new Date().toISOString()
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
+						processedAt: new Date().toISOString()
+					}));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				processedAt: new Date().toISOString()
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint for sequential processing (Step 4 then Step 5)
+	if (req.url === "/api/test/sequential-processing" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					const { processLinkedInDataSequentially } = await import('./lib/database');
+					const result = await processLinkedInDataSequentially(linkedinUrl);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						result,
+						processedAt: new Date().toISOString()
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
+						processedAt: new Date().toISOString()
+					}));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				processedAt: new Date().toISOString()
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint to link skills to candidate
+	if (req.url === "/api/test/link-skills" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { candidateId, skills } = JSON.parse(body);
+					
+					const { linkSkillsToCandidate } = await import('./lib/database');
+					const result = await linkSkillsToCandidate(candidateId, skills);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						result,
+						processedAt: new Date().toISOString()
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
+						processedAt: new Date().toISOString()
+					}));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({
+				success: false,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				processedAt: new Date().toISOString()
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint to find candidate by LinkedIn URL
+	if (req.url === "/api/test/find-candidate" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					const { findCandidateByLinkedInUrl } = await import('./lib/database');
+					const candidate = await findCandidateByLinkedInUrl(linkedinUrl);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						found: !!candidate,
+						candidate: candidate ? {
+							id: candidate.id,
+							first_name: candidate.first_name,
+							last_name: candidate.last_name,
+							linkedin_url: candidate.linkedin_url
+						} : null
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error instanceof Error ? error.message : "Unknown error"
+					}));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
+	// Test endpoint to directly check database
+	if (req.url === "/api/test/db-check" && req.method === "GET") {
+		try {
+			const { pool } = await import('./lib/database');
+			
+			// Check if candidates_skills table exists
+			const tableExistsResult = await pool.query(`
+				SELECT EXISTS (
+					SELECT FROM information_schema.tables 
+					WHERE table_schema = 'public' 
+					AND table_name = 'candidates_skills'
+				);
+			`);
+			
+			// Check candidates_skills table
+			const candidateSkillsResult = await pool.query(`
+				SELECT COUNT(*) as count FROM candidates_skills 
+				WHERE candidate_id = 'b3679811-1997-4978-b212-c64f981dcb87'
+			`);
+			
+			// Check skills table
+			const skillsResult = await pool.query(`
+				SELECT COUNT(*) as count FROM skills WHERE source = 'user'
+			`);
+			
+			res.writeHead(200, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: true,
+				candidatesSkillsTableExists: tableExistsResult.rows[0].exists,
+				candidateSkillsCount: candidateSkillsResult.rows[0].count,
+				userSkillsCount: skillsResult.rows[0].count
+			}));
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false,
+				error: error instanceof Error ? error.message : "Unknown error"
 			}));
 		}
 		return;
@@ -963,6 +1394,97 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						success: false,
 						error: error.message,
 						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
+	// Update existing candidate with LinkedIn data
+	if (req.url === "/api/linkedin/update-candidate" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl, mockData } = JSON.parse(body);
+					
+					if (!linkedinUrl) {
+						res.writeHead(400, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ "Content-Type": "application/json" }));
+						return;
+					}
+					
+					console.log(`🔄 Updating candidate with LinkedIn data: ${linkedinUrl}`);
+					
+					const { updateCandidateWithLinkedInData } = await import('./lib/database');
+					const result = await updateCandidateWithLinkedInData(linkedinUrl, mockData);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify(result));
+					
+				} catch (error: any) {
+					console.error('❌ Error updating candidate:', error);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ 
+						success: false, 
+						error: error instanceof Error ? error.message : 'Unknown error' 
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
+	// Update existing candidate with mock data
+	if (req.url === "/api/linkedin/update-candidate-mock" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { profileType = 'satya-nadella' } = JSON.parse(body);
+					
+					console.log(`🔄 Updating candidate with mock data: ${profileType}`);
+					
+					const { getMockData } = await import('./lib/mock-data');
+					const mockData = getMockData(profileType);
+					
+					const { updateCandidateWithLinkedInData } = await import('./lib/database');
+					const result = await updateCandidateWithLinkedInData(mockData.linkedinUrl, mockData);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						updateResult: result,
+						mockDataUsed: profileType
+					}));
+					
+				} catch (error: any) {
+					console.error('❌ Error updating candidate with mock data:', error);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ 
+						success: false, 
+						error: error instanceof Error ? error.message : 'Unknown error' 
 					}));
 				}
 			});

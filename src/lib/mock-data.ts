@@ -5,6 +5,7 @@ export const mockLinkedInData = {
   "username": "satyanadella",
   "firstName": "Satya",
   "lastName": "Nadella",
+  "email": "satya.nadella@microsoft.com",
   "isTopVoice": true,
   "isCreator": false,
   "isPremium": true,
@@ -124,6 +125,7 @@ export const mockProfiles = {
 		username: "unique-skills-test",
 		firstName: "Test",
 		lastName: "Candidate",
+		email: "test.candidate@example.com",
 		isPremium: false,
 		headline: "Test Candidate with Unique Skills",
 		geo: {
@@ -152,5 +154,17 @@ export const mockProfiles = {
 
 // Get mock data by profile type
 export function getMockData(profileType: string = "satya-nadella") {
-  return mockProfiles[profileType] || mockProfiles["satya-nadella"];
+  const mockData = mockProfiles[profileType] || mockProfiles["satya-nadella"];
+  
+  // Add linkedinUrl based on profile type
+  const linkedinUrls = {
+    "satya-nadella": "https://www.linkedin.com/in/satya-nadella/",
+    "test-candidate": "https://www.linkedin.com/in/test-candidate/",
+    "unique-skills-test": "https://www.linkedin.com/in/mock-test/"
+  };
+  
+  return {
+    ...mockData,
+    linkedinUrl: linkedinUrls[profileType] || linkedinUrls["satya-nadella"]
+  };
 }

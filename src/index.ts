@@ -204,7 +204,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 			
 			req.on("end", async () => {
 				try {
-					const { linkedinUrl } = JSON.parse(body);
+					const { linkedinUrl, testDatabase = false } = JSON.parse(body);
 					
 					if (!linkedinUrl || !linkedinUrl.includes("linkedin.com")) {
 						res.writeHead(400, { "Content-Type": "application/json" });
@@ -215,7 +215,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						return;
 					}
 
-					console.log(`🔄 Processing single LinkedIn URL: ${linkedinUrl}`);
+					console.log(`🔄 Processing single LinkedIn URL: ${linkedinUrl}${testDatabase ? ' (with database test)' : ''}`);
 					
 					// Check cache first
 					const isFresh = await isCacheFresh(linkedinUrl);
@@ -255,6 +255,25 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
 					const validation = validateCandidateData(candidateData.candidateProfile);
 					
+					// Database test if requested
+					let dbResult = null;
+					if (testDatabase) {
+						try {
+							const { checkDatabaseSchema, insertLinkedInDataWithOrder } = await import('./lib/database');
+							const schemaCompatible = await checkDatabaseSchema();
+							
+							if (schemaCompatible) {
+								console.log(`💾 Testing database insert for: ${linkedinUrl}`);
+								dbResult = await insertLinkedInDataWithOrder(linkedinUrl);
+								console.log(`💾 Database insert result:`, dbResult);
+							} else {
+								console.log(`❌ Database schema not compatible`);
+							}
+						} catch (dbError) {
+							console.error(`❌ Database test failed:`, dbError);
+						}
+					}
+					
 					res.writeHead(200, { "Content-Type": "application/json" });
 					res.end(JSON.stringify({
 						success: true,
@@ -262,6 +281,14 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						databaseOperations: candidateData.databaseOperations,
 						candidateProfile: candidateData.candidateProfile,
 						validation,
+						databaseTest: testDatabase ? {
+							success: dbResult?.success || false,
+							candidateId: dbResult?.candidateId,
+							skillsCreated: dbResult?.skillsCreated || 0,
+							skillsLinked: dbResult?.skillsLinked || 0,
+							duplicate: dbResult?.duplicate || false,
+							error: dbResult?.error || null
+						} : null,
 						metadata: {
 							linkedinUrl,
 							processedAt: new Date().toISOString(),

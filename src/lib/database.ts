@@ -820,9 +820,6 @@ export async function insertSkillsOnly(linkedinUrl: string, mockData?: any): Pro
 					const skillResult = await client.query(
 						`INSERT INTO skills (id, name, source, is_active, created_at, updated_at)
 						 VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
-						 ON CONFLICT (name) DO UPDATE SET 
-						   updated_at = NOW(),
-						   is_active = true
 						 RETURNING id, name`,
 						[skillToCreate.skillName, 'user', true]
 					);

@@ -435,6 +435,20 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						}
 					}
 					
+					// If no cache, try cached data
+					if (!linkedinData) {
+						try {
+							const { getCachedData, hasCachedData } = await import('./lib/cache-data');
+							if (hasCachedData(linkedinUrl)) {
+								console.log(`📋 Loading from cached data: ${linkedinUrl}`);
+								linkedinData = getCachedData(linkedinUrl);
+								source = "cached";
+							}
+						} catch (error) {
+							console.log(`❌ No cached data available for: ${linkedinUrl}`);
+						}
+					}
+					
 					// Fetch from RapidAPI if not cached
 					if (!linkedinData) {
 						console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
@@ -445,7 +459,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					// Map to candidate format
 					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
 					
-					// STEP 1: Save JSON to volume (always do this first)
+					// STEP 1: Save JSON to volume
 					let jsonFile = null;
 					let jsonSaved = false;
 					try {
@@ -454,25 +468,24 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 						console.log(`💾 JSON backup saved: ${jsonFile}`);
 					} catch (jsonError) {
 						console.error(`❌ Failed to save JSON backup:`, jsonError);
-						// Continue with database insert even if JSON save fails
 					}
 					
 					// STEP 2: Insert to database (skills first, then candidate)
 					let dbResult = null;
 					let databaseInserted = false;
 					try {
+						const { insertLinkedInDataWithOrder } = await import('./lib/database');
 						dbResult = await insertLinkedInDataWithOrder(linkedinUrl);
 						databaseInserted = dbResult.success;
 						console.log(`💾 Database insert result:`, dbResult);
 					} catch (dbError) {
 						console.error(`❌ Failed to insert to database:`, dbError);
-						// JSON backup is still available as fallback
 					}
 					
 					// Return comprehensive result
 					res.writeHead(200, { "Content-Type": "application/json" });
 					res.end(JSON.stringify({
-						success: jsonSaved || databaseInserted, // Success if either worked
+						success: jsonSaved || databaseInserted,
 						source,
 						jsonBackup: {
 							saved: jsonSaved,

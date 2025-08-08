@@ -219,46 +219,48 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					
 					// Check cache first
 					const isFresh = await isCacheFresh(linkedinUrl);
+					let linkedinData;
+					let source = "api";
+					
 					if (isFresh) {
 						console.log(`📋 Loading from cache: ${linkedinUrl}`);
-						const cachedData = await loadFromCache(linkedinUrl);
-						if (cachedData) {
-							const candidateData = await mapLinkedInToCandidate(cachedData, linkedinUrl);
-							const validation = validateCandidateData(candidateData);
-							
-							res.writeHead(200, { "Content-Type": "application/json" });
-							res.end(JSON.stringify({
-								success: true,
-								source: "cache",
-								data: candidateData,
-								validation,
-								metadata: {
-									linkedinUrl,
-									processedAt: new Date().toISOString(),
-									totalPositions: cachedData.position?.length || 0,
-									totalSkills: cachedData.skills?.length || 0,
-								}
-							}));
-							return;
+						linkedinData = await loadFromCache(linkedinUrl);
+						if (linkedinData) {
+							source = "cache";
 						}
 					}
 					
-					// Fetch from RapidAPI
-					console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
-					const linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+					// If no cache, try cached data
+					if (!linkedinData) {
+						try {
+							const { getCachedData, hasCachedData } = await import('./lib/cache-data');
+							if (hasCachedData(linkedinUrl)) {
+								console.log(`📋 Loading from cached data: ${linkedinUrl}`);
+								linkedinData = getCachedData(linkedinUrl);
+								source = "cached";
+							}
+						} catch (error) {
+							console.log(`❌ No cached data available for: ${linkedinUrl}`);
+						}
+					}
 					
-					// Save to cache
-					await saveToCache(linkedinUrl, linkedinData);
+					// Fetch from RapidAPI if not cached
+					if (!linkedinData) {
+						console.log(`🌐 Fetching from RapidAPI: ${linkedinUrl}`);
+						linkedinData = await rapidAPIClient.getProfileData(linkedinUrl);
+						await saveToCache(linkedinUrl, linkedinData);
+					}
 					
 					// Map to candidate format
 					const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
-					const validation = validateCandidateData(candidateData);
+					const validation = validateCandidateData(candidateData.candidateProfile);
 					
 					res.writeHead(200, { "Content-Type": "application/json" });
 					res.end(JSON.stringify({
 						success: true,
-						source: "api",
-						data: candidateData,
+						source,
+						databaseOperations: candidateData.databaseOperations,
+						candidateProfile: candidateData.candidateProfile,
 						validation,
 						metadata: {
 							linkedinUrl,

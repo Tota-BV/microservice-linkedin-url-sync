@@ -747,7 +747,7 @@ export async function insertLinkedInDataWithOrder(linkedinUrl: string): Promise<
 }
 
 // Insert only skills (without candidate profile) - SAFE VERSION
-export async function insertSkillsOnly(linkedinUrl: string): Promise<{
+export async function insertSkillsOnly(linkedinUrl: string, mockData?: any): Promise<{
 	success: boolean;
 	skillsCreated?: number;
 	skillsFound?: number;
@@ -768,8 +768,14 @@ export async function insertSkillsOnly(linkedinUrl: string): Promise<{
 	try {
 		console.log(`🔄 Inserting skills only for: ${linkedinUrl}`);
 		
-		// Get LinkedIn data
-		const linkedinData = await getLinkedInData(linkedinUrl);
+		// Get LinkedIn data (use mock data if provided, otherwise fetch from API)
+		let linkedinData;
+		if (mockData) {
+			console.log(`📋 Using provided mock data for: ${linkedinUrl}`);
+			linkedinData = mockData;
+		} else {
+			linkedinData = await getLinkedInData(linkedinUrl);
+		}
 		
 		// Map LinkedIn data to candidate format
 		const { mapLinkedInToCandidate } = await import('./linkedin-mapper');

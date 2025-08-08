@@ -828,7 +828,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 					try {
 						const { insertSkillsOnly } = await import('./lib/database');
 						console.log(`💾 Testing skills-only insert with mock data`);
-						skillsResult = await insertSkillsOnly("https://www.linkedin.com/in/mock-test/");
+						skillsResult = await insertSkillsOnly("https://www.linkedin.com/in/mock-test/", mockData);
 						console.log(`💾 Skills insert result:`, skillsResult);
 					} catch (skillsError) {
 						console.error(`❌ Skills test failed:`, skillsError);

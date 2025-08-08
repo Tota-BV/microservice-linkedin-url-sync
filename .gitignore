@@ -11,3 +11,6 @@ dist-ssr
 
 # Cache files
 src/cache/
+
+# Sensitive data files
+src/lib/cache-data.ts

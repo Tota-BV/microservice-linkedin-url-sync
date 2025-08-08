@@ -676,6 +676,75 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// Test with cached data
+	if (req.url === "/api/linkedin/sync-cached" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => {
+				body += chunk.toString();
+			});
+			
+			req.on("end", async () => {
+				try {
+					const { linkedinUrl } = JSON.parse(body);
+					
+					console.log(`🧪 Using cached data for: ${linkedinUrl}`);
+					
+					// Import cached data
+					const { getCachedData, hasCachedData } = await import('./lib/cache-data');
+					
+					if (!hasCachedData(linkedinUrl)) {
+						res.writeHead(404, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({
+							success: false,
+							error: "No cached data available for this URL",
+							linkedinUrl,
+							processedAt: new Date().toISOString(),
+						}));
+						return;
+					}
+					
+					const cachedData = getCachedData(linkedinUrl);
+					
+					// Map to candidate format
+					const candidateData = await mapLinkedInToCandidate(cachedData, linkedinUrl);
+					const validation = validateCandidateData(candidateData.candidateProfile);
+					
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						source: "cached",
+						databaseOperations: candidateData.databaseOperations,
+						candidateProfile: candidateData.candidateProfile,
+						validation,
+						metadata: {
+							linkedinUrl,
+							processedAt: new Date().toISOString(),
+							totalPositions: cachedData.position?.length || 0,
+							totalSkills: cachedData.skills?.length || 0,
+						}
+					}));
+					
+				} catch (error: any) {
+					console.error(`❌ Error processing cached data:`, error.message);
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: false,
+						error: error.message,
+						processedAt: new Date().toISOString(),
+					}));
+				}
+			});
+		} catch (error: any) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ 
+				success: false, 
+				error: "Internal server error" 
+			}));
+		}
+		return;
+	}
+
 	// Database test endpoint
 	if (req.url === "/api/test/database" && req.method === "POST") {
 		try {

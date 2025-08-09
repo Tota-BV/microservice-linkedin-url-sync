@@ -497,6 +497,60 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// Read-only DB stats per candidate (no hardcoded IDs)
+	if (req.url === "/api/test/db-stats" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+			req.on("end", async () => {
+				try {
+					const { candidateId: candidateIdInput, linkedinUrl } = JSON.parse(body || '{}');
+					const { pool, findCandidateByLinkedInUrl } = await import('./lib/database');
+
+					let candidateId = candidateIdInput as string | undefined;
+					if (!candidateId && linkedinUrl) {
+						const candidate = await findCandidateByLinkedInUrl(linkedinUrl);
+						candidateId = candidate?.id;
+					}
+
+					if (!candidateId) {
+						res.writeHead(400, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ success: false, error: 'Provide candidateId or linkedinUrl' }));
+						return;
+					}
+
+					const [skills, edu, certs, langs, verif] = await Promise.all([
+						pool.query('SELECT COUNT(*)::int AS count FROM candidates_skills WHERE candidate_id = $1', [candidateId]),
+						pool.query('SELECT COUNT(*)::int AS count FROM candidates_education WHERE candidate_id = $1', [candidateId]),
+						pool.query('SELECT COUNT(*)::int AS count FROM candidates_certifications WHERE candidate_id = $1', [candidateId]),
+						pool.query('SELECT COUNT(*)::int AS count FROM candidates_languages WHERE candidate_id = $1', [candidateId]),
+						pool.query('SELECT COUNT(*)::int AS count FROM candidates_verification WHERE candidate_id = $1', [candidateId])
+					]);
+
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({
+						success: true,
+						candidateId,
+						counts: {
+							skills: skills.rows[0]?.count ?? 0,
+							education: edu.rows[0]?.count ?? 0,
+							certifications: certs.rows[0]?.count ?? 0,
+							languages: langs.rows[0]?.count ?? 0,
+							verification: verif.rows[0]?.count ?? 0
+						}
+					}));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }));
+		}
+		return;
+	}
+
 	// Initialize cache with real RapidAPI data
 	if (req.url === "/api/cache/init" && req.method === "POST") {
 		try {

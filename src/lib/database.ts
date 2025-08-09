@@ -76,6 +76,37 @@ export async function createSkill(skillName: string): Promise<string> {
 	}
 }
 
+// Ensure all LinkedIn skills exist in our skills table before linking
+export async function ensureSkillsExistFromLinkedInData(linkedinData: any): Promise<{
+  total: number;
+  createdCount: number;
+  alreadyExistedCount: number;
+}> {
+  const skills = Array.isArray(linkedinData?.skills) ? linkedinData.skills : [];
+  let createdCount = 0;
+  let alreadyExistedCount = 0;
+
+  for (const s of skills) {
+    const skillName: string | undefined = s?.name?.trim();
+    if (!skillName) continue;
+
+    const existing = await findSkillByName(skillName);
+    if (existing) {
+      alreadyExistedCount++;
+      continue;
+    }
+    try {
+      await createSkill(skillName);
+      createdCount++;
+    } catch (e) {
+      // Ignore unique violations to keep idempotent
+      console.warn(`Skill creation skipped for '${skillName}':`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  return { total: skills.length, createdCount, alreadyExistedCount };
+}
+
 export async function findCandidateByLinkedInUrl(linkedinUrl: string): Promise<Candidate | null> {
 	try {
 		const result = await pool.query(
@@ -119,6 +150,11 @@ export async function linkSkillsToCandidate(candidateId: string, skills: Array<{
 // Main sequential processing function
 export async function processLinkedInDataSequentially(linkedinUrl: string): Promise<{
 	success: boolean;
+  step3?: {
+    totalSkillsDiscovered: number;
+    createdSkills: number;
+    alreadyExisted: number;
+  };
 	step4?: {
 		skillsLinked: number;
 		totalSkills: number;
@@ -150,12 +186,16 @@ export async function processLinkedInDataSequentially(linkedinUrl: string): Prom
 		
 		console.log(`✅ Step 2: Retrieved LinkedIn data`);
 		
-		// STEP 3: Map LinkedIn data to candidate format
-		const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
-		console.log(`✅ Step 3: Mapped LinkedIn data to candidate format`);
+    // STEP 3: Ensure skills exist in our database
+    const ensureResult = await ensureSkillsExistFromLinkedInData(linkedinData);
+    console.log(`✅ Step 3: Ensured skills exist (created ${ensureResult.createdCount}, existed ${ensureResult.alreadyExistedCount})`);
+
+    // Map LinkedIn data to candidate format (now that skills exist)
+    const candidateData = await mapLinkedInToCandidate(linkedinData, linkedinUrl);
+    console.log(`✅ Step 4: Mapped LinkedIn data to candidate format`);
 		
-		// STEP 4: Link skills to candidate (ONLY after skills are ensured to exist)
-		console.log(`🔄 Step 4: Starting skills linking...`);
+    // STEP 4: Link skills to candidate (ONLY after skills are ensured to exist)
+    console.log(`🔄 Step 5: Starting skills linking...`);
 		
 		const skillsToLink = candidateData.candidateProfile.skills
 			.filter(skill => skill.skillId !== null)
@@ -172,20 +212,25 @@ export async function processLinkedInDataSequentially(linkedinUrl: string): Prom
 			totalSkills: candidateData.candidateProfile.skills.length
 		};
 		
-		console.log(`✅ Step 4: Skills linking completed (${step4Result.linkedCount}/${step4Result.totalSkills} skills linked)`);
+    console.log(`✅ Step 5: Skills linking completed (${step4Result.linkedCount}/${step4Result.totalSkills} skills linked)`);
 		
-		// STEP 5: Insert education and certifications (ONLY after Step 4 completes)
-		console.log(`🔄 Step 5: Starting education and certifications insertion...`);
+    // STEP 5: Insert education and certifications (ONLY after Step 4 completes)
+    console.log(`🔄 Step 6: Starting education and certifications insertion...`);
 		
 		const educationResult = await insertEducation(candidate.id, candidateData);
 		const certificationResult = await insertCertifications(candidate.id, candidateData);
 		const languageResult = await insertLanguages(candidate.id, candidateData);
 		const verificationResult = await insertVerification(candidate.id, candidateData);
 		
-		console.log(`✅ Step 5: Education and certifications completed`);
+    console.log(`✅ Step 6: Education and certifications completed`);
 		
 		return {
 			success: true,
+      step3: {
+        totalSkillsDiscovered: ensureResult.total,
+        createdSkills: ensureResult.createdCount,
+        alreadyExisted: ensureResult.alreadyExistedCount
+      },
 			step4: {
 				skillsLinked: step4Result.linkedCount || 0,
 				totalSkills: step4Result.totalSkills || 0

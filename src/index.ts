@@ -22,40 +22,42 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 	// Health check endpoint
 	if (req.url === "/health") {
 		try {
-			// Test database connection
-			const { checkDatabaseSchema } = await import('./lib/database');
-			const dbStatus = await checkDatabaseSchema();
-			
+			const { pingDatabase } = await import('./lib/database');
+			const db = await pingDatabase();
+
 			res.writeHead(200, { "Content-Type": "application/json" });
-			res.end(JSON.stringify({ 
-				status: "ok", 
+			res.end(JSON.stringify({
+				status: "ok",
 				timestamp: new Date().toISOString(),
 				version: "1.0.0",
 				features: {
 					caching: true,
 					rapidApi: true,
 					bulkProcessing: true,
-					dataMapping: true,
+					dataMapping: true
 				},
 				database: {
-					connected: dbStatus,
-					status: dbStatus ? "ready" : "schema_mismatch"
+					connected: db.ok,
+					latencyMs: db.latencyMs,
+					status: db.ok ? "ready" : "error",
+					error: db.error ?? null
 				}
 			}));
 		} catch (error) {
 			res.writeHead(200, { "Content-Type": "application/json" });
-			res.end(JSON.stringify({ 
-				status: "ok", 
+			res.end(JSON.stringify({
+				status: "ok",
 				timestamp: new Date().toISOString(),
 				version: "1.0.0",
 				features: {
 					caching: true,
 					rapidApi: true,
 					bulkProcessing: true,
-					dataMapping: true,
+					dataMapping: true
 				},
 				database: {
 					connected: false,
+					latencyMs: 0,
 					status: "error",
 					error: error instanceof Error ? error.message : "Unknown error"
 				}

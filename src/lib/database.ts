@@ -3,9 +3,20 @@ import { mapLinkedInToCandidate } from './linkedin-mapper';
 import { loadFromCache } from './cache';
 
 // Database connection
-const pool = new Pool({
+export const pool = new Pool({
 	connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/candidates_db'
 });
+
+// Lightweight DB ping for health checks
+export async function pingDatabase(): Promise<{ ok: boolean; latencyMs: number; error?: string }> {
+  const startedAt = Date.now();
+  try {
+    await pool.query('SELECT 1');
+    return { ok: true, latencyMs: Date.now() - startedAt };
+  } catch (error) {
+    return { ok: false, latencyMs: Date.now() - startedAt, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
 
 // Interfaces
 export interface Skill {

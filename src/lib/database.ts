@@ -64,16 +64,31 @@ export async function findSkillByName(skillName: string): Promise<Skill | null> 
 }
 
 export async function createSkill(skillName: string): Promise<string> {
-	try {
-		const result = await pool.query(
-			'INSERT INTO skills (name, source) VALUES ($1, $2) RETURNING id',
-			[skillName, 'user']
-		);
-		return result.rows[0].id;
-	} catch (error) {
-		console.error('Error creating skill:', error);
-		throw error;
-	}
+  try {
+    const result = await pool.query(
+      `INSERT INTO skills (name, source, is_active)
+       VALUES ($1, $2, true)
+       ON CONFLICT (LOWER(name)) DO UPDATE SET name = EXCLUDED.name
+       RETURNING id`,
+      [skillName, 'user']
+    );
+    return result.rows[0].id;
+  } catch (error) {
+    // If ON CONFLICT cannot be used because the unique index is missing,
+    // fall back to read-then-insert to avoid crashing.
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes('no unique or exclusion constraint matching the ON CONFLICT specification')) {
+      const existing = await findSkillByName(skillName);
+      if (existing) return existing.id;
+      const plain = await pool.query(
+        'INSERT INTO skills (name, source, is_active) VALUES ($1, $2, true) RETURNING id',
+        [skillName, 'user']
+      );
+      return plain.rows[0].id;
+    }
+    console.error('Error creating skill:', error);
+    throw error;
+  }
 }
 
 // Ensure all LinkedIn skills exist in our skills table before linking

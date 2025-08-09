@@ -551,6 +551,51 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 		return;
 	}
 
+	// List skills for a candidate (by candidateId or linkedinUrl)
+	if (req.url === "/api/test/list-skills" && req.method === "POST") {
+		try {
+			let body = "";
+			req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+			req.on("end", async () => {
+				try {
+					const { candidateId: candidateIdInput, linkedinUrl } = JSON.parse(body || '{}');
+					const { pool, findCandidateByLinkedInUrl } = await import('./lib/database');
+
+					let candidateId = candidateIdInput as string | undefined;
+					if (!candidateId && linkedinUrl) {
+						const candidate = await findCandidateByLinkedInUrl(linkedinUrl);
+						candidateId = candidate?.id;
+					}
+
+					if (!candidateId) {
+						res.writeHead(400, { "Content-Type": "application/json" });
+						res.end(JSON.stringify({ success: false, error: 'Provide candidateId or linkedinUrl' }));
+						return;
+					}
+
+					const result = await pool.query(
+						`SELECT s.id, s.name
+						 FROM candidates_skills cs
+						 JOIN skills s ON s.id = cs.skill_id
+						 WHERE cs.candidate_id = $1
+						 ORDER BY s.name`,
+						[candidateId]
+					);
+
+					res.writeHead(200, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ success: true, candidateId, skills: result.rows }));
+				} catch (error) {
+					res.writeHead(500, { "Content-Type": "application/json" });
+					res.end(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }));
+				}
+			});
+		} catch (error) {
+			res.writeHead(500, { "Content-Type": "application/json" });
+			res.end(JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }));
+		}
+		return;
+	}
+
 	// Initialize cache with real RapidAPI data
 	if (req.url === "/api/cache/init" && req.method === "POST") {
 		try {

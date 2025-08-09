@@ -63,6 +63,32 @@ export async function findSkillByName(skillName: string): Promise<Skill | null> 
 	}
 }
 
+// Find a skill by its canonical name OR any of its abbreviations (synonyms)
+export async function findSkillByNameOrAbbreviation(skillName: string): Promise<Skill | null> {
+  const cleaned = (skillName || '').trim();
+  if (!cleaned) return null;
+  try {
+    const result = await pool.query(
+      `SELECT *
+       FROM skills
+       WHERE is_active = true
+         AND (
+           LOWER(name) = LOWER($1)
+           OR EXISTS (
+             SELECT 1 FROM unnest(COALESCE(abbreviations, ARRAY[]::text[])) AS ab
+             WHERE LOWER(ab) = LOWER($1)
+           )
+         )
+       LIMIT 1`,
+      [cleaned]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Error finding skill by name or abbreviation:', error);
+    return null;
+  }
+}
+
 export async function createSkill(skillName: string): Promise<string> {
   try {
     const result = await pool.query(
@@ -105,7 +131,7 @@ export async function ensureSkillsExistFromLinkedInData(linkedinData: any): Prom
     const skillName: string | undefined = s?.name?.trim();
     if (!skillName) continue;
 
-    const existing = await findSkillByName(skillName);
+    const existing = await findSkillByNameOrAbbreviation(skillName);
     if (existing) {
       alreadyExistedCount++;
       continue;

@@ -155,7 +155,7 @@ export async function findCandidateByLinkedInUrl(linkedinUrl: string): Promise<C
 			[linkedinUrl]
 		);
 		return result.rows[0] || null;
-	} catch (error) {
+			} catch (error) {
 		console.error('Error finding candidate by LinkedIn URL:', error);
 		return null;
 	}
@@ -182,7 +182,7 @@ export async function linkSkillsToCandidate(candidateId: string, skills: Array<{
 			);
 			
 			console.log(`✅ Linked skill ${skill.skillId} to candidate ${candidateId}`);
-		} catch (error) {
+			} catch (error) {
 			console.error(`❌ Error linking skill ${skill.skillId}:`, error);
 		}
 	}

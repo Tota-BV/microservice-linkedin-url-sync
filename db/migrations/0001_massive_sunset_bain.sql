@@ -1,1 +1,0 @@
-ALTER TABLE "candidates" ADD COLUMN "date_of_birth" date NOT NULL;

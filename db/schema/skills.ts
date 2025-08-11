@@ -28,13 +28,13 @@ const textArray = customType<{ data: string[]; driverData: string[] }>({
 export const skills = pgTable("skills", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	name: text("name").notNull(),
-	skillType: skillType("skill_type").notNull(),
+	skill_type: skillType("skill_type").notNull(),
 	source: source("source").notNull(),
-	isActive: boolean("is_active").notNull().default(true),
-	escoId: text("esco_id"),
+	is_active: boolean("is_active").notNull().default(true),
+	esco_id: text("esco_id"),
 	abbreviations: textArray("abbreviations"),
-	createdAt: date("created_at").notNull().defaultNow(),
-	updatedAt: date("updated_at").notNull().defaultNow(),
+	created_at: date("created_at").notNull().defaultNow(),
+	updated_at: date("updated_at").notNull().defaultNow(),
 
 	embedding: vector("embedding", { dimensions: 1536 }).notNull(),
 });

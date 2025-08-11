@@ -1,42 +1,38 @@
-version: "3"
+version: '3.8'
+
 services:
-  db:
-    image: ankane/pgvector
-    restart: always
-    shm_size: 128mb
-    ports:
-      - 5432:5432
-    networks:
-      - tota
+  # PostgreSQL database for local testing
+  postgres:
+    image: postgres:15-alpine
+    container_name: tota_postgres
     environment:
+      POSTGRES_DB: tota_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tota_db
+    ports:
+      - "5433:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  redis:
-    image: redis:alpine
-    restart: on-failure
+  # LinkedIn microservice
+  linkedin-service:
+    build: .
+    container_name: tota_linkedin_service
     ports:
-      - 6379:6379
-    networks:
-      - tota
-
-  mail:
-    image: axllent/mailpit
-    container_name: mailpit
-    restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "1025:1025"
+      - "3000:3000"
     environment:
-      MP_UI_BIND_ADDR: :9000
-      MP_MAX_MESSAGES: 5000
-      MP_SMTP_AUTH_ACCEPT_ANY: 1
-      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tota_db
+      - RAPIDAPI_KEY=${RAPIDAPI_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src/cache:/app/src/cache
 
 volumes:
-  pgdata:
-networks:
-  tota:
+  postgres_data:

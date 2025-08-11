@@ -15,10 +15,11 @@
 	"dependencies": {
 		"@t3-oss/env-core": "^0.13.8",
 		"axios": "^1.6.0",
-		"zod": "^4.0.14",
+		"dotenv": "^17.2.1",
 		"drizzle-orm": "^0.35.0",
 		"pg": "^8.11.3",
-		"postgres": "^3.4.4"
+		"postgres": "^3.4.4",
+		"zod": "^4.0.14"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.1.3",

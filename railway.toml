@@ -1,14 +1,19 @@
 [build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+builder = "nixpacks"
 
 [deploy]
-startCommand = "bun start"
+startCommand = "bun run start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
 
 [[services]]
-name = "web"
+name = "linkedin-sync-service"
+
+# Environment variables that need to be set in Railway dashboard
+# DATABASE_URL - Railway PostgreSQL connection string
+# RAPIDAPI_KEY - Your RapidAPI key for LinkedIn data
+# PORT - Railway sets this automatically
 
 

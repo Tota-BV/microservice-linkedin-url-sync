@@ -85,7 +85,11 @@ export const candidateWorkExperience = pgTable("candidates_work_experience", {
 	endYear: integer("end_year"),
 	description: textArray("description"),
 	order: integer("order"),
-});
+	location: text("location"),
+	employmentType: text("employment_type"),
+}, (table) => [
+	unique().on(table.candidateId, table.jobTitle, table.companyName, table.startYear)
+]);
 
 export const candidateAvailability = pgTable("candidates_availability", {
 	id: uuid("id").primaryKey().defaultRandom(),
@@ -153,10 +157,10 @@ export const candidateCertifications = pgTable("candidates_certifications", {
 
 	title: text("title").notNull(),
 	startYear: integer("start_year").notNull(),
-	endYear: integer("end_year").notNull(),
-});
+	endYear: integer("end_year"),
+}, (table) => [unique().on(table.candidateId, table.title)]);
 
-export const candidateLanguagesProficiency = pgEnum("verification_status", [
+export const candidateLanguagesProficiency = pgEnum("language_proficiency", [
 	"basic",
 	"conversational",
 	"professional",

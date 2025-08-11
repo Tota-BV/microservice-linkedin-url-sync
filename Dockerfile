@@ -1,3 +1,4 @@
+# Updated for Node.js - Railway deployment fix
 FROM node:18-alpine
 
 # Set working directory

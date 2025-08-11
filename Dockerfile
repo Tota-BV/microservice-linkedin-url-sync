@@ -7,7 +7,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies (after copying everything)
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Create cache directory
 RUN mkdir -p src/cache/linkedin-profiles

@@ -1,6 +1,9 @@
 # Updated for Node.js - Railway deployment fix
 FROM node:18-alpine
 
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash
+
 # Set working directory
 WORKDIR /app
 

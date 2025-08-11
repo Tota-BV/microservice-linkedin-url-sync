@@ -1,23 +1,16 @@
-# Updated for Node.js - Railway deployment fix
-FROM node:18-alpine
-
-# Install Bun
-RUN curl -fsSL https://bun.sh/install | bash
+FROM oven/bun:1.0.35-alpine
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json bun.lock ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
-
-# Build the application
-RUN npm run build
 
 # Create cache directory
 RUN mkdir -p src/cache/linkedin-profiles
@@ -26,4 +19,4 @@ RUN mkdir -p src/cache/linkedin-profiles
 EXPOSE 3000
 
 # Start the application
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "start"]

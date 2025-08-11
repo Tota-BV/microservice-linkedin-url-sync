@@ -1,16 +1,19 @@
-FROM oven/bun:1.0.35-alpine
+FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lock ./
+COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
+
+# Build the application
+RUN npm run build
 
 # Create cache directory
 RUN mkdir -p src/cache/linkedin-profiles
@@ -19,4 +22,4 @@ RUN mkdir -p src/cache/linkedin-profiles
 EXPOSE 3000
 
 # Start the application
-CMD ["bun", "run", "start"]
+CMD ["npm", "start"]

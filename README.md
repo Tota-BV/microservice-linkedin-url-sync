@@ -1,173 +1,226 @@
 # LinkedIn URL Sync Microservice
 
-A simple microservice for syncing LinkedIn profile data to enrich existing candidate profiles.
+Een microservice voor het synchroniseren van LinkedIn profielen met bestaande candidate records in de database.
 
-## 🎯 **What This Does**
+## 🚀 Features
 
-This microservice follows a specific workflow:
-1. **Fetch LinkedIn data** (cache first, then RapidAPI)
-2. **Ensure skills exist** in database (normalize, match, create idempotently)
-3. **Map LinkedIn → internal model**
-4. **Link skills to candidate** (idempotent)
-5. **Insert related data** (verification, languages, education, certifications)
+- **LinkedIn Profile Sync**: Haalt LinkedIn data op via RapidAPI
+- **Skills Processing**: Verwerkt en koppelt skills aan candidates
+- **Education & Work Experience**: Synchroniseert opleiding en werkervaring
+- **Idempotent**: Kan veilig meerdere keren worden uitgevoerd zonder duplicaten
+- **Health Checks**: Railway-compatibele health check endpoint
+- **Search API**: Zoek candidates op voornaam met alle gerelateerde data
+- **Rate Limiting**: Automatische API throttling om quota te beschermen
+- **Streaming Responses**: Memory-efficient processing van grote batches
+- **Advanced Error Handling**: Specifieke error types en recovery mogelijkheden
 
-**Note**: This service only enriches existing profiles. You must create the basic candidate profile in your main application first.
+## 🏗️ Architectuur
 
-## 🚀 **Quick Start for Local Testing**
+```
+src/
+├── index.ts                 # Main server & API endpoints
+├── lib/
+│   ├── core/
+│   │   ├── data-mapper.ts   # LinkedIn data mapping
+│   │   └── skills-processor.ts # Skills processing logic
+│   ├── database.ts          # Database connection & queries
+│   ├── rapidapi.ts          # RapidAPI LinkedIn integration
+│   └── repositories/        # Data access layer
+│       ├── skills-repository.ts
+│       ├── skills-candidate-repository.ts
+│       └── related-data-repository.ts
+└── cache/                   # LinkedIn profile caching
+```
 
-### **Option 1: Local Code + Railway Database (Recommended)**
+## 🛠️ Setup
 
-1. **Set up environment variables:**
-   ```bash
-   # .env.local
-   DATABASE_URL=your-railway-postgresql-url
-   RAPIDAPI_KEY=your-rapidapi-key
-   ```
+### Vereisten
+- Node.js >= 22
+- Bun >= 1.2.19
+- PostgreSQL database
+- RapidAPI key voor LinkedIn data
 
-2. **Install dependencies:**
-   ```bash
-   bun install
-   ```
+### Installatie
 
-3. **Run locally:**
-   ```bash
-   bun run dev
-   ```
-
-4. **Test endpoints:**
-   - Health: `GET http://localhost:3000/health`
-   - Single sync: `POST http://localhost:3000/api/linkedin/sync`
-   - Bulk sync: `POST http://localhost:3000/api/linkedin/sync-bulk`
-
-### **Option 2: Full Local Stack**
-
-1. **Start local database:**
-   ```bash
-   docker-compose up postgres -d
-   ```
-
-2. **Set environment:**
-   ```bash
-   # .env.local
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/tota_db
-   RAPIDAPI_KEY=your-rapidapi-key
-   ```
-
-3. **Run service:**
-   ```bash
-   bun run dev
-   ```
-
-## 📊 **API Endpoints**
-
-### **Health Check**
+1. **Clone repository**
 ```bash
+git clone <repository-url>
+cd microservice-linkedin-url-sync
+```
+
+2. **Installeer dependencies**
+```bash
+bun install
+```
+
+3. **Environment variables instellen**
+```bash
+cp .env.example .env
+# Vul in: DATABASE_URL, RAPIDAPI_KEY, PORT
+```
+
+4. **Database setup**
+```bash
+# Run database migrations
+bun run db:migrate
+```
+
+5. **Start service**
+```bash
+# Development
+bun run dev
+
+# Production
+bun run start
+```
+
+## 🌐 API Endpoints
+
+### Health Check
+```
 GET /health
 ```
 
-### **Single LinkedIn Sync**
-```bash
+### Candidate Search
+```
+GET /api/candidates/search?firstName=<naam>
+```
+
+### Single LinkedIn Sync
+```
 POST /api/linkedin/sync
 Content-Type: application/json
 
 {
-  "linkedinUrl": "https://linkedin.com/in/username"
+  "linkedinUrl": "https://www.linkedin.com/in/username/"
 }
 ```
 
-### **Bulk LinkedIn Sync**
-```bash
+### Bulk LinkedIn Sync
+```
 POST /api/linkedin/sync-bulk
 Content-Type: application/json
 
 {
   "linkedinUrls": [
-    "https://linkedin.com/in/username1",
-    "https://linkedin.com/in/username2"
+    "https://www.linkedin.com/in/user1/",
+    "https://www.linkedin.com/in/user2/"
   ]
 }
 ```
 
-## 🔧 **Development**
+## 🚀 Deployment
 
-### **Scripts**
-- `bun run dev` - Start development server
-- `bun run start` - Start production server
-- `bun run build` - Build TypeScript
+### Railway Deployment
+De service is geconfigureerd voor Railway deployment:
 
-### **Database Schema**
-The service expects these tables to exist:
-- `candidates` - Basic candidate profiles
-- `skills` - Available skills
-- `candidate_skills` - Skills linked to candidates
-- `education` - Education history
-- `certifications` - Professional certifications
-- `languages` - Language proficiencies
-- `verification` - Work verification
+1. **railway.toml**: Build en deploy configuratie
+2. **Dockerfile**: Container configuratie met Bun runtime
+3. **Health checks**: Automatische health monitoring
 
-## 🚀 **Deployment**
+### Environment Variables (Railway)
+- `DATABASE_URL`: PostgreSQL connection string
+- `RAPIDAPI_KEY`: RapidAPI key voor LinkedIn data
+- `PORT`: Service port (Railway stelt dit automatisch in)
 
-### **Railway (Simple)**
-1. Connect your GitHub repo to Railway
-2. Set environment variables in Railway dashboard
-3. Deploy automatically on push
+## 📊 Database Schema
 
-### **Docker**
+### Hoofdtabellen
+- `candidates`: Basis candidate informatie
+- `skills`: Beschikbare skills
+- `candidates_skills`: Koppeling tussen candidates en skills
+
+### Gerelateerde tabellen
+- `candidates_education`: Opleiding informatie
+- `candidates_work_experience`: Werkervaring
+- `candidates_certifications`: Certificeringen
+- `candidates_languages`: Talen
+- `candidates_verification`: Verificatie status
+
+## 🔄 Sync Workflow
+
+1. **Input**: LinkedIn URL van bestaande candidate
+2. **Fetch**: Haal LinkedIn data op via RapidAPI
+3. **Process**: Verwerk skills, education, work experience
+4. **Update**: Update candidate record en gerelateerde tabellen
+5. **Link**: Koppel skills aan candidate (idempotent)
+
+## 🧪 Testing
+
+### Lokaal testen
 ```bash
-docker build -t linkedin-sync .
-docker run -p 3000:3000 -e DATABASE_URL=... -e RAPIDAPI_KEY=... linkedin-sync
+# Start service
+bun run start
+
+# Test health check
+curl http://localhost:3000/health
+
+# Test candidate search
+curl "http://localhost:3000/api/candidates/search?firstName=Arnand"
+
+# Test LinkedIn sync
+curl -X POST http://localhost:3000/api/linkedin/sync \
+  -H "Content-Type: application/json" \
+  -d '{"linkedinUrl": "https://www.linkedin.com/in/arnandsiem/"}'
 ```
 
-## 📝 **Environment Variables**
+### Productie testen
+Vervang `localhost:3000` door je Railway app URL.
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `RAPIDAPI_KEY` | RapidAPI key for LinkedIn data | Yes |
-| `PORT` | Server port (default: 3000) | No |
+## 📝 Logging
 
-## 🎯 **Testing Strategy**
+De service logt uitgebreid alle operaties:
+- LinkedIn data fetching
+- Database operaties
+- Skills processing
+- Error handling
 
-**For fast iteration:**
-1. Use Railway database directly from local code
-2. No need to deploy for every test
-3. Real data, real database, instant feedback
+## 🚨 Troubleshooting
 
-**For production testing:**
-1. Deploy to Railway staging environment
-2. Test with real data
-3. Deploy to production when ready
+### Veelvoorkomende problemen
 
-## 🔍 **Troubleshooting**
+1. **Database connectie mislukt**
+   - Controleer `DATABASE_URL` in environment
+   - Verifieer database toegankelijkheid
 
-### **Common Issues**
-- **"Candidate not found"** - Create basic profile in main app first
-- **Database connection failed** - Check `DATABASE_URL` format
-- **RapidAPI errors** - Verify `RAPIDAPI_KEY` is valid
+2. **RapidAPI errors**
+   - Controleer `RAPIDAPI_KEY`
+   - Verifieer API quota en rate limits
 
-### **Logs**
-The service provides detailed logging for debugging:
-- Request/response details
-- Database operation results
-- Cache hit/miss information
-- Error details with context
+3. **Railway deployment faalt**
+   - Check health check endpoint
+   - Verifieer Dockerfile configuratie
+   - Controleer Railway logs
 
-## 📚 **Architecture**
+## 🤝 Contributing
 
-- **Simple HTTP server** - No complex frameworks
-- **Repository pattern** - Clean database operations
-- **File-based caching** - Simple LinkedIn data caching
-- **RapidAPI integration** - LinkedIn profile fetching
-- **Idempotent operations** - Safe to run multiple times
+1. Fork de repository
+2. Maak feature branch
+3. Commit changes
+4. Push naar branch
+5. Maak Pull Request
 
-## 🤝 **Contributing**
+## 📄 License
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test locally with Railway database
-5. Submit a pull request
+MIT License - zie LICENSE bestand voor details.
+
+## 👥 Team
+
+- **Arnand Siem** - Initiator & Lead Developer
+- **Ricardo Pereira Rodrigues** - Backend Development
+- **Bas Rienstra** - Frontend Integration
+- **Ayman Berkane** - Testing & QA
+- **Fons Thijssen** - DevOps & Deployment
+
+## 📞 Support
+
+Voor vragen of problemen:
+- Open een GitHub issue
+- Neem contact op met het development team
+- Check Railway logs voor deployment issues
 
 ---
 
-**Built for speed and simplicity.** Test fast, deploy when ready.
+**Laatste update**: August 2025  
+**Versie**: 1.0.0  
+**Status**: Production Ready ✅

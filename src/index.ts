@@ -148,7 +148,7 @@ const server = createServer(
         return;
       }
 
-      // Add new endpoint to find candidates by first name
+      // New endpoint: Find candidates by first name
       if (req.url?.startsWith("/api/candidates/search?")) {
         try {
           const urlObj = new URL(req.url, `http://localhost:3000`);
@@ -164,21 +164,54 @@ const server = createServer(
           // Import database function
           const { pool } = await import("./lib/database");
           
-          // Search for candidates by first name
-          const result = await pool.query(
-            "SELECT id, first_name, last_name, email, linkedin_url, created_at FROM candidates WHERE LOWER(first_name) = LOWER($1)",
-            [firstName]
-          );
+          // Simple query: Basic candidate info with skills count
+          const simpleQuery = `
+            SELECT 
+              c.id,
+              c.first_name,
+              c.last_name,
+              c.email,
+              c.linkedin_url,
+              c.profile_image_url,
+              c.bio,
+              c.general_job_title,
+              c.current_company,
+              c.working_location,
+              c.category,
+              c.created_at,
+              c.updated_at,
+              COUNT(cs.skill_id) as skills_count
+              
+            FROM candidates c
+            LEFT JOIN candidates_skills cs ON c.id = cs.candidate_id
+            WHERE LOWER(c.first_name) = LOWER($1)
+            GROUP BY c.id, c.first_name, c.last_name, c.email, c.linkedin_url, 
+                     c.profile_image_url, c.bio, c.general_job_title, c.current_company, 
+                     c.working_location, c.category, c.created_at, c.updated_at
+            ORDER BY c.created_at DESC
+          `;
+          
+          const result = await pool.query(simpleQuery, [firstName]);
 
           if (result.rows.length === 0) {
             sendErrorResponse(res, 404, "No candidates found", { firstName });
             return;
           }
 
+          // Process the results to clean up the JSON arrays
+          const processedCandidates = result.rows.map(candidate => ({
+            ...candidate,
+            skills_count: parseInt(candidate.skills_count) || 0
+          }));
+
           sendSuccessResponse(res, {
-            candidates: result.rows,
-            count: result.rows.length,
-            searchTerm: firstName
+            candidates: processedCandidates,
+            count: processedCandidates.length,
+            searchTerm: firstName,
+            summary: {
+              totalSkills: processedCandidates.reduce((sum, c) => sum + c.skills_count, 0),
+              totalCandidates: processedCandidates.length
+            }
           });
 
         } catch (error) {
@@ -407,19 +440,37 @@ const server = createServer(
 
           // Process URLs in parallel with concurrency limit
           const concurrencyLimit = 5;
-          const results = [];
+          
+          // Import streaming utilities
+          const { StreamingBatchProcessor } = await import("./lib/streaming-response");
+          const { rapidAPIRateLimiter } = await import("./lib/rate-limiter");
+          const { LinkedInSyncError } = await import("./lib/errors");
+          
+          const batchProcessor = new StreamingBatchProcessor(res);
+          batchProcessor.startBatch(linkedinUrls.length, {
+            concurrencyLimit,
+            processedAt: new Date().toISOString()
+          });
 
           for (let i = 0; i < linkedinUrls.length; i += concurrencyLimit) {
             const batch = linkedinUrls.slice(i, i + concurrencyLimit);
             const batchPromises = batch.map(async (url) => {
               try {
+                // Rate limiting toepassen
+                await rapidAPIRateLimiter.waitIfNeeded();
+                
                 // Fetch data directly from RapidAPI
                 let linkedinData: any;
                 
                 try {
                   linkedinData = await rapidAPIClient.getProfileData(url);
                 } catch (apiError: any) {
-                  return { url, success: false, error: `Failed to fetch: ${apiError.message}` };
+                  const error = LinkedInSyncError.fromRapidAPI(
+                    `Failed to fetch: ${apiError.message}`,
+                    apiError.status,
+                    { url }
+                  );
+                  return { url, success: false, error: error.message, errorType: error.type, recoverable: error.recoverable };
                 }
 
                 // Map to candidate format
@@ -499,7 +550,7 @@ const server = createServer(
                   relatedDataRepo.insertVerification(existingCandidate.id, candidateData.verification),
                 ]);
 
-                return {
+                const result = {
                   url,
                   success: true,
                   candidateId: existingCandidate.id,
@@ -512,32 +563,38 @@ const server = createServer(
                     verificationStatus: verificationResult.status === "fulfilled" ? "updated" : "failed",
                   },
                 };
+                
+                return result;
               } catch (error: any) {
-                return { url, success: false, error: error.message };
+                const syncError = LinkedInSyncError.fromError(error, 'UNKNOWN', false, { url });
+                const errorResult = { 
+                  url, 
+                  success: false, 
+                  error: syncError.message, 
+                  errorType: syncError.type, 
+                  recoverable: syncError.recoverable 
+                };
+                
+                return errorResult;
               }
             });
 
             const batchResults = await Promise.all(batchPromises);
-            results.push(...batchResults);
+            
+            // Verwerk resultaten voor streaming
+            batchResults.forEach(result => {
+              batchProcessor.processResult(result);
+            });
+            
+            // Check of response nog actief is (client kan disconnecten)
+            if (!batchProcessor.isActive()) {
+              console.log("⚠️ Client disconnected, stopping batch processing");
+              return;
+            }
           }
 
-          // Calculate summary
-          const successful = results.filter((r) => r.success);
-          const failed = results.filter((r) => !r.success);
-
-          sendSuccessResponse(res, {
-            summary: {
-              total: linkedinUrls.length,
-              successful: successful.length,
-              failed: failed.length,
-            },
-            results,
-            metadata: {
-              processedAt: new Date().toISOString(),
-              processingTime: Date.now() - startTime,
-              concurrencyLimit,
-            },
-          });
+          // Eindig batch processing met streaming
+          batchProcessor.endBatch();
         } catch (error: any) {
           console.error(`❌ Error processing bulk LinkedIn URLs:`, error.message);
           sendErrorResponse(res, 500, error.message, {

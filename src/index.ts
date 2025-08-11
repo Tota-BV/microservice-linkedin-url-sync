@@ -148,6 +148,46 @@ const server = createServer(
         return;
       }
 
+      // Add new endpoint to find candidates by first name
+      if (req.url?.startsWith("/api/candidates/search?")) {
+        try {
+          const urlObj = new URL(req.url, `http://localhost:3000`);
+          const firstName = urlObj.searchParams.get("firstName");
+          
+          if (!firstName) {
+            sendErrorResponse(res, 400, "firstName parameter is required");
+            return;
+          }
+
+          console.log(`🔍 Searching for candidates with first name: ${firstName}`);
+          
+          // Import database function
+          const { pool } = await import("./lib/database");
+          
+          // Search for candidates by first name
+          const result = await pool.query(
+            "SELECT id, first_name, last_name, email, linkedin_url, created_at FROM candidates WHERE LOWER(first_name) = LOWER($1)",
+            [firstName]
+          );
+
+          if (result.rows.length === 0) {
+            sendErrorResponse(res, 404, "No candidates found", { firstName });
+            return;
+          }
+
+          sendSuccessResponse(res, {
+            candidates: result.rows,
+            count: result.rows.length,
+            searchTerm: firstName
+          });
+
+        } catch (error) {
+          console.error("❌ Error searching candidates:", error);
+          sendErrorResponse(res, 500, "Search failed", error);
+        }
+        return;
+      }
+
       // LinkedIn sync endpoint - single URL
       if (req.url === "/api/linkedin/sync" && req.method === "POST") {
         try {

@@ -8,6 +8,17 @@ healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
+# Specify Bun as the runtime and build environment
+[build.environment]
+BUN_VERSION = "1.2.19"
+NIXPACKS_NODE_VERSION = "18"
+
+# Override the default build commands for Bun
+[build.nixpacks]
+startCmd = "bun run start"
+installCmd = "curl -fsSL https://bun.sh/install | bash"
+buildCmd = "echo 'Bun project - no build step needed'"
+
 [[services]]
 name = "linkedin-sync-service"
 

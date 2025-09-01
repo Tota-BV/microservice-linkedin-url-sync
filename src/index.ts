@@ -604,12 +604,330 @@ const server = createServer(
         return;
       }
 
+      // CV sync endpoint - single CV data
+      if (req.url === "/api/cv/sync" && req.method === "POST") {
+        try {
+          const body = await parseRequestBody(req);
+          const { cvData, linkedinUrl, pdfUrl, useTestFile } = JSON.parse(body);
+
+          if (!linkedinUrl) {
+            sendErrorResponse(res, 400, "linkedinUrl is required to match existing candidate");
+            return;
+          }
+
+          if (!validateLinkedInUrl(linkedinUrl)) {
+            sendErrorResponse(res, 400, "Invalid LinkedIn URL format", {
+              expectedFormat: "https://linkedin.com/in/username",
+              providedUrl: linkedinUrl,
+            });
+            return;
+          }
+
+          let processedCvData = cvData;
+
+          // If useTestFile is true, use a random PDF from test_resumes directory
+          if (useTestFile) {
+            console.log(`🧪 Using test file from test_resumes directory`);
+            const { readdirSync } = await import("fs");
+            const { join } = await import("path");
+            
+            try {
+              const testResumesDir = join(process.cwd(), "test_resumes");
+              const files = readdirSync(testResumesDir).filter(file => file.endsWith('.pdf'));
+              
+              if (files.length === 0) {
+                sendErrorResponse(res, 400, "No test PDF files found in test_resumes directory");
+                return;
+              }
+              
+              // Pick a random PDF file
+              const randomFile = files[Math.floor(Math.random() * files.length)];
+              const testPdfPath = join(testResumesDir, randomFile);
+              
+              console.log(`📄 Using test file: ${randomFile}`);
+              
+              // Call your Railway Resume API with the local file
+              try {
+                const { readFileSync } = await import("fs");
+                const pdfBuffer = readFileSync(testPdfPath);
+                const pdfBase64 = pdfBuffer.toString('base64');
+                
+                console.log(`📡 Calling Resume API for file: ${randomFile}`);
+                
+                // Call the new Resume API endpoint
+                const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-single-cv', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'LinkedIn-Microservice/1.0',
+                    'Accept': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    file_id: `test_${Date.now()}`,
+                    pdf_base64: pdfBase64,
+                    filename: randomFile
+                  }),
+                  signal: AbortSignal.timeout(120000), // 2 minutes timeout
+                  keepalive: true
+                });
+                
+                if (!resumeApiResponse.ok) {
+                  throw new Error(`Resume API error: ${resumeApiResponse.status} ${resumeApiResponse.statusText}`);
+                }
+                
+                const parsedData = await resumeApiResponse.json();
+                console.log(`✅ Resume API parsed data successfully for: ${randomFile}`);
+                console.log(`📊 Resume API Response:`, JSON.stringify(parsedData, null, 2));
+                
+                // Map the Resume API response to our expected format
+                processedCvData = {
+                  firstName: parsedData.result?.personal_info?.first_name || parsedData.result?.personal_info?.firstName || "Unknown",
+                  lastName: parsedData.result?.personal_info?.last_name || parsedData.result?.personal_info?.lastName || "Unknown",
+                  skills: Array.isArray(parsedData.result?.skills) ? parsedData.result.skills : [],
+                  education: Array.isArray(parsedData.result?.education) ? parsedData.result.education : [],
+                  workExperience: Array.isArray(parsedData.result?.work_experience) ? parsedData.result.workExperience : [],
+                  certifications: Array.isArray(parsedData.result?.certifications) ? parsedData.result.certifications : [],
+                  languages: Array.isArray(parsedData.result?.languages) ? parsedData.result.languages : [],
+                  verification: Array.isArray(parsedData.result?.verification) ? parsedData.result.verification : [],
+                  bio: parsedData.result?.summary || parsedData.result?.bio || "",
+                  generalJobTitle: parsedData.result?.personal_info?.job_title || parsedData.result?.personal_info?.generalJobTitle || "",
+                  currentCompany: parsedData.result?.personal_info?.current_company || parsedData.result?.personal_info?.currentCompany || "",
+                  workingLocation: parsedData.result?.personal_info?.location || parsedData.result?.personal_info?.workingLocation || "",
+                  category: parsedData.result?.category || null,
+                  dateOfBirth: parsedData.result?.personal_info?.date_of_birth || parsedData.result?.personal_info?.dateOfBirth || null,
+                  profileImageUrl: parsedData.result?.personal_info?.profile_image_url || parsedData.result?.personal_info?.profileImageUrl || null
+                };
+                
+                console.log(`🔄 Mapped CV Data:`, JSON.stringify(processedCvData, null, 2));
+                
+              } catch (apiError: any) {
+                console.error(`❌ Resume API error:`, apiError);
+                sendErrorResponse(res, 500, `Failed to parse PDF with Resume API: ${apiError.message || 'Unknown error'}`);
+                return;
+              }
+              
+            } catch (error) {
+              console.error("❌ Error reading test resumes directory:", error);
+              sendErrorResponse(res, 500, "Failed to read test resumes directory");
+              return;
+            }
+          } else if (pdfUrl) {
+            // Production: Process PDF from S3/blob storage URL
+            console.log(`🔗 Processing PDF from URL: ${pdfUrl}`);
+            
+            try {
+              console.log(`📡 Calling Resume API for URL: ${pdfUrl}`);
+              
+              const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-single-cv', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'User-Agent': 'LinkedIn-Microservice/1.0',
+                  'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                  file_id: `url_${Date.now()}`,
+                  pdf_url: pdfUrl,
+                  filename: 'remote_file.pdf'
+                }),
+                signal: AbortSignal.timeout(120000), // 2 minutes timeout
+                keepalive: true
+              });
+              
+              if (!resumeApiResponse.ok) {
+                throw new Error(`Resume API error: ${resumeApiResponse.status} ${resumeApiResponse.statusText}`);
+              }
+              
+              const parsedData = await resumeApiResponse.json();
+              console.log(`✅ Resume API parsed data successfully for URL: ${pdfUrl}`);
+              
+              // Map the Resume API response to our expected format
+              processedCvData = {
+                firstName: parsedData.result?.personal_info?.first_name || parsedData.result?.personal_info?.firstName || "Unknown",
+                lastName: parsedData.result?.personal_info?.last_name || parsedData.result?.personal_info?.lastName || "Unknown",
+                skills: Array.isArray(parsedData.result?.skills) ? parsedData.result.skills : [],
+                education: Array.isArray(parsedData.result?.education) ? parsedData.result.education : [],
+                workExperience: Array.isArray(parsedData.result?.work_experience) ? parsedData.result.workExperience : [],
+                certifications: Array.isArray(parsedData.result?.certifications) ? parsedData.result.certifications : [],
+                languages: Array.isArray(parsedData.result?.languages) ? parsedData.result.languages : [],
+                verification: Array.isArray(parsedData.result?.verification) ? parsedData.result.verification : [],
+                bio: parsedData.result?.summary || parsedData.result?.bio || "",
+                generalJobTitle: parsedData.result?.personal_info?.job_title || parsedData.result?.personal_info?.generalJobTitle || "",
+                currentCompany: parsedData.result?.personal_info?.current_company || parsedData.result?.personal_info?.currentCompany || "",
+                workingLocation: parsedData.result?.personal_info?.location || parsedData.result?.personal_info?.workingLocation || "",
+                category: parsedData.result?.category || null,
+                dateOfBirth: parsedData.result?.personal_info?.date_of_birth || parsedData.result?.personal_info?.dateOfBirth || null,
+                profileImageUrl: parsedData.result?.personal_info?.profile_image_url || parsedData.result?.personal_info?.profileImageUrl || null
+              };
+              
+            } catch (apiError: any) {
+              console.error(`❌ Resume API error:`, apiError);
+              sendErrorResponse(res, 500, `Failed to parse PDF with Resume API: ${apiError.message || 'Unknown error'}`);
+              return;
+            }
+          } else if (!cvData) {
+            sendErrorResponse(res, 400, "Either cvData, pdfUrl, or useTestFile must be provided");
+            return;
+          }
+
+          if (!validateLinkedInUrl(linkedinUrl)) {
+            sendErrorResponse(res, 400, "Invalid LinkedIn URL format", {
+              expectedFormat: "https://linkedin.com/in/username",
+              providedUrl: linkedinUrl,
+            });
+            return;
+          }
+
+          console.log(`🔄 Processing CV data for LinkedIn URL: ${linkedinUrl}`);
+
+          // Find existing candidate
+          const existingCandidate = await findCandidateByLinkedInUrl(linkedinUrl);
+
+          if (!existingCandidate) {
+            sendErrorResponse(res, 404, "Candidate not found", {
+              message: "The microservice can only enrich existing profiles. Please create the basic candidate profile in the main application first.",
+              linkedinUrl,
+              enrichmentData: {
+                skills: processedCvData.skills,
+                education: processedCvData.education,
+                certifications: processedCvData.certifications,
+                languages: processedCvData.languages,
+                verification: processedCvData.verification,
+              },
+            });
+            return;
+          }
+
+          // Update basic candidate fields with CV data
+          console.log(`🔄 [SERVICE] Updating basic candidate fields with CV data...`);
+          const { updateCandidate } = await import("./lib/database");
+          
+          const updateResult = await updateCandidate(existingCandidate.id, {
+            firstName: processedCvData.firstName || existingCandidate.firstName,
+            lastName: processedCvData.lastName || existingCandidate.lastName,
+            bio: processedCvData.bio || existingCandidate.bio,
+            generalJobTitle: processedCvData.generalJobTitle || existingCandidate.generalJobTitle,
+            currentCompany: processedCvData.currentCompany || existingCandidate.currentCompany,
+            profileImageUrl: processedCvData.profileImageUrl || existingCandidate.profileImageUrl,
+            category: processedCvData.category || existingCandidate.category,
+            dateOfBirth: processedCvData.dateOfBirth || existingCandidate.dateOfBirth,
+            workingLocation: processedCvData.workingLocation || existingCandidate.workingLocation,
+            updatedAt: new Date()
+          });
+
+          if (!updateResult.success) {
+            console.warn(`⚠️ [SERVICE] Failed to update basic candidate fields:`, updateResult.error);
+          } else {
+            console.log(`✅ [SERVICE] Basic candidate fields updated successfully`);
+          }
+
+          // Process skills and link them to candidate
+          console.log(`🔄 [SKILLS] Processing skills for candidate...`);
+          const { SkillsRepository } = await import("./lib/repositories/skills-repository");
+          const { SkillsCandidateRepository } = await import("./lib/repositories/skills-candidate-repository");
+          const skillsRepo = new SkillsRepository();
+          const skillsCandidateRepo = new SkillsCandidateRepository();
+          
+          // Map CV skills to the format expected by processSkillsForDatabase
+          const skillsToProcess = (processedCvData.skills || []).map((skill: any) => ({
+            skillName: skill.name || skill, // Handle both object and string formats
+            endorsementsCount: skill.endorsementsCount || 0,
+            isCore: skill.passedSkillAssessment || false,
+          }));
+          
+          console.log(`📊 Skills to process:`, JSON.stringify(skillsToProcess, null, 2));
+          
+          const skillsResult = await skillsRepo.processSkillsForDatabase(skillsToProcess);
+
+          // Link skills to candidate using the processed skills result
+          const skillsToLink = skillsResult.processedSkills.map((skill) => ({
+            skillId: skill.skillId,
+            skillName: skill.skillName,
+            wasCreated: skill.wasCreated,
+            wasMatched: skill.wasMatched,
+          }));
+
+          const skillsLinkResult = await skillsCandidateRepo.linkSkillsToCandidate(
+            existingCandidate.id,
+            skillsToLink,
+          );
+
+          // Insert related data
+          console.log(`🔄 [RELATED DATA] Inserting related data for candidate...`);
+          const { RelatedDataRepository } = await import("./lib/repositories/related-data-repository");
+          const relatedDataRepo = new RelatedDataRepository();
+
+          // Debug: Log the data being passed to repositories
+          console.log(`🔍 [SERVICE] Data being passed to repositories:`);
+          console.log(`  - Education: ${processedCvData.education?.length || 0} records`);
+          console.log(`  - Verification: ${processedCvData.verification?.length || 0} records`);
+          console.log(`  - Languages: ${processedCvData.languages?.length || 0} records`);
+          console.log(`  - Certifications: ${processedCvData.certifications?.length || 0} records`);
+
+          const [
+            educationResult,
+            workExperienceResult,
+            certificationsResult,
+            languagesResult,
+            verificationResult,
+          ] = await Promise.allSettled([
+            relatedDataRepo.insertEducation(existingCandidate.id, processedCvData.education),
+            relatedDataRepo.insertWorkExperience(existingCandidate.id, processedCvData.workExperience),
+            relatedDataRepo.insertCertifications(existingCandidate.id, processedCvData.certifications),
+            relatedDataRepo.insertLanguages(existingCandidate.id, processedCvData.languages),
+            relatedDataRepo.insertVerification(existingCandidate.id, processedCvData.verification),
+          ]);
+
+          // Process results
+          const results = {
+            education: educationResult.status === "fulfilled" ? educationResult.value : { success: false, error: "Failed" },
+            workExperience: workExperienceResult.status === "fulfilled" ? workExperienceResult.value : { success: false, error: "Failed" },
+            certifications: certificationsResult.status === "fulfilled" ? certificationsResult.value : { success: false, error: "Failed" },
+            languages: languagesResult.status === "fulfilled" ? languagesResult.value : { success: false, error: "Failed" },
+            verification: verificationResult.status === "fulfilled" ? verificationResult.value : { success: false, error: "Failed" },
+          };
+
+          // Return enrichment result
+          sendSuccessResponse(res, {
+            source: "cv-parser",
+            candidateId: existingCandidate.id,
+            enrichment: {
+              skillsLinked: skillsLinkResult.success ? skillsLinkResult.skillsLinked : 0,
+              educationAdded: educationResult.status === "fulfilled" ? educationResult.value : 0,
+              workExperienceAdded: workExperienceResult.status === "fulfilled" ? workExperienceResult.value : 0,
+              certificationsAdded: certificationsResult.status === "fulfilled" ? certificationsResult.value : 0,
+              languagesIdentified: languagesResult.status === "fulfilled" ? languagesResult.value : 0,
+              verificationStatus: verificationResult.status === "fulfilled" ? "updated" : "failed",
+            },
+            metadata: {
+              linkedinUrl,
+              processedAt: new Date().toISOString(),
+              totalSkills: skillsToLink.length,
+              totalEducation: educationResult.status === "fulfilled" ? educationResult.value : 0,
+              totalWorkExperience: workExperienceResult.status === "fulfilled" ? workExperienceResult.value : 0,
+              totalCertifications: certificationsResult.status === "fulfilled" ? certificationsResult.value : 0,
+              totalLanguages: languagesResult.status === "fulfilled" ? languagesResult.value : 0,
+              processingTime: Date.now() - startTime,
+            },
+            results,
+          });
+        } catch (error: any) {
+          console.error(`❌ Error processing CV data:`, error.message);
+          sendErrorResponse(res, 500, error.message, {
+            linkedinUrl: req.url || "unknown",
+            processingTime: Date.now() - startTime,
+          });
+        }
+        return;
+      }
+
       // 404 for unknown endpoints
       sendErrorResponse(res, 404, "Endpoint not found", {
         availableEndpoints: [
           "GET /health",
           "POST /api/linkedin/sync",
           "POST /api/linkedin/sync-bulk",
+          "POST /api/cv/sync",
         ],
       });
     } catch (error: any) {
@@ -640,4 +958,5 @@ server.listen(PORT, () => {
   console.log(`📊 Health check available at: http://localhost:${PORT}/health`);
   console.log(`🔗 Single sync: POST http://localhost:${PORT}/api/linkedin/sync`);
   console.log(`📦 Bulk sync: POST http://localhost:${PORT}/api/linkedin/sync-bulk`);
+  console.log(`📄 CV sync: POST http://localhost:${PORT}/api/cv/sync`);
 });

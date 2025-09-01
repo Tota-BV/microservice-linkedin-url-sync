@@ -9,6 +9,56 @@ export class RapidAPIClient {
     "x-rapidapi-host": env.RAPIDAPI_HOST,
   };
 
+  // Search for people by job title/keywords
+  async searchPeople(keywordTitle: string, keywords: string = "", start: number = 0): Promise<any> {
+    try {
+      console.log(`🔍 Searching for people with title: ${keywordTitle}, keywords: ${keywords}, start: ${start}`);
+
+      const response = await axios.get(
+        `${this.baseURL}/search-people`,
+        {
+          headers: this.headers,
+          params: {
+            keywordTitle,
+            keywords,
+            start,
+          },
+          timeout: 30000, // 30 second timeout
+        },
+      );
+
+      console.log(`✅ Successfully searched for: ${keywordTitle} (start: ${start})`);
+      return response.data;
+    } catch (error: any) {
+      console.error(
+        `❌ Error searching for ${keywordTitle}:`,
+        error.message,
+      );
+
+      if (error.response) {
+        // API error response
+        const status = error.response.status;
+        const data = error.response.data;
+
+        if (status === 429) {
+          throw new Error(
+            `Rate limit exceeded for search. Please try again later.`,
+          );
+        } else if (status === 400) {
+          throw new Error(`Invalid search parameters: ${data?.message || "Bad request"}`);
+        } else {
+          throw new Error(
+            `API error (${status}): ${data?.message || "Unknown error"}`,
+          );
+        }
+      } else if (error.code === "ECONNABORTED") {
+        throw new Error(`Request timeout for search`);
+      } else {
+        throw new Error(`Network error for search: ${error.message}`);
+      }
+    }
+  }
+
   // Get LinkedIn profile data by URL
   async getProfileData(linkedinUrl: string): Promise<any> {
     try {

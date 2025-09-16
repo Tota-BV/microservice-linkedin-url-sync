@@ -656,19 +656,20 @@ const server = createServer(
                 
                 console.log(`📡 Calling Resume API for file: ${randomFile}`);
                 
-                // Call the new Resume API endpoint
+                // Call the Resume API async endpoint for better processing
                 const formData = new FormData();
                 formData.append('file', new Blob([pdfBuffer], { type: 'application/pdf' }), randomFile);
                 formData.append('filename', randomFile);
                 
-                const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-cv', {
+                console.log(`📡 Starting async Resume API processing for file: ${randomFile}`);
+                const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-cv-async', {
                   method: 'POST',
                   headers: {
                     'User-Agent': 'LinkedIn-Microservice/1.0',
                     'Accept': 'application/json'
                   },
                   body: formData,
-                  signal: AbortSignal.timeout(120000), // 2 minutes timeout
+                  signal: AbortSignal.timeout(300000), // 5 minutes timeout for slow Resume API
                   keepalive: true
                 });
                 
@@ -676,7 +677,55 @@ const server = createServer(
                   throw new Error(`Resume API error: ${resumeApiResponse.status} ${resumeApiResponse.statusText}`);
                 }
                 
-                const parsedData = await resumeApiResponse.json();
+                const asyncResponse = await resumeApiResponse.json();
+                const processId = asyncResponse.process_id;
+                
+                if (!processId) {
+                  throw new Error(`No process ID returned from async Resume API`);
+                }
+                
+                console.log(`⏳ Polling for results with process ID: ${processId}`);
+                
+                // Poll for results with exponential backoff
+                let attempts = 0;
+                const maxAttempts = 30; // 5 minutes max
+                let parsedData;
+                
+                while (attempts < maxAttempts) {
+                  await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+                  attempts++;
+                  
+                  console.log(`🔍 Checking status (attempt ${attempts}/${maxAttempts})...`);
+                  
+                  const statusResponse = await fetch(`https://cvparser-production-450e.up.railway.app/status/${processId}`, {
+                    headers: {
+                      'User-Agent': 'LinkedIn-Microservice/1.0',
+                      'Accept': 'application/json'
+                    }
+                  });
+                  
+                  const statusData = await statusResponse.json();
+                  
+                  if (statusData.status === 'completed') {
+                    console.log(`✅ Resume API processing completed!`);
+                    const resultsResponse = await fetch(`https://cvparser-production-450e.up.railway.app/results/${processId}`, {
+                      headers: {
+                        'User-Agent': 'LinkedIn-Microservice/1.0',
+                        'Accept': 'application/json'
+                      }
+                    });
+                    parsedData = await resultsResponse.json();
+                    break;
+                  } else if (statusData.status === 'failed') {
+                    throw new Error(`Resume API processing failed: ${statusData.error || 'Unknown error'}`);
+                  } else {
+                    console.log(`⏳ Still processing... (${statusData.status})`);
+                  }
+                }
+                
+                if (!parsedData) {
+                  throw new Error(`Resume API processing timed out after ${maxAttempts} attempts`);
+                }
                 console.log(`✅ Resume API parsed data successfully for: ${randomFile}`);
                 console.log(`📊 Resume API Response:`, JSON.stringify(parsedData, null, 2));
                 
@@ -745,7 +794,7 @@ const server = createServer(
                   'Accept': 'application/json'
                 },
                 body: formData,
-                signal: AbortSignal.timeout(120000), // 2 minutes timeout
+                signal: AbortSignal.timeout(300000), // 5 minutes timeout for slow Resume API
                 keepalive: true
               });
               

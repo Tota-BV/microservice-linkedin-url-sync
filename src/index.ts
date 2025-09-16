@@ -286,13 +286,14 @@ const server = createServer(
             return;
           }
 
-          // Update basic candidate fields with LinkedIn data
+          // Update basic candidate fields with LinkedIn data (EXCEPT name, surname, email)
           console.log(`🔄 [SERVICE] Updating basic candidate fields with LinkedIn data...`);
           const { updateCandidate } = await import("./lib/database");
           
           const updateResult = await updateCandidate(existingCandidate.id, {
-            firstName: candidateData.firstName || existingCandidate.firstName,
-            lastName: candidateData.lastName || existingCandidate.lastName,
+            // firstName: candidateData.firstName || existingCandidate.firstName,        // ❌ DO NOT UPDATE
+            // lastName: candidateData.lastName || existingCandidate.lastName,          // ❌ DO NOT UPDATE
+            // email: candidateData.email || existingCandidate.email,                  // ❌ DO NOT UPDATE
             bio: candidateData.bio || existingCandidate.bio,
             generalJobTitle: candidateData.generalJobTitle || existingCandidate.generalJobTitle,
             currentCompany: candidateData.currentCompany || existingCandidate.currentCompany,
@@ -490,13 +491,14 @@ const server = createServer(
                   return { url, success: false, error: "Candidate not found" };
                 }
 
-                // Update basic candidate fields with LinkedIn data
+                // Update basic candidate fields with LinkedIn data (EXCEPT name, surname, email)
                 console.log(`🔄 [SERVICE] Updating basic candidate fields for ${url}...`);
                 const { updateCandidate } = await import("./lib/database");
                 
                 const updateResult = await updateCandidate(existingCandidate.id, {
-                  firstName: candidateData.firstName || existingCandidate.firstName,
-                  lastName: candidateData.lastName || existingCandidate.lastName,
+                  // firstName: candidateData.firstName || existingCandidate.firstName,        // ❌ DO NOT UPDATE
+                  // lastName: candidateData.lastName || existingCandidate.lastName,          // ❌ DO NOT UPDATE
+                  // email: candidateData.email || existingCandidate.email,                  // ❌ DO NOT UPDATE
                   bio: candidateData.bio || existingCandidate.bio,
                   generalJobTitle: candidateData.generalJobTitle || existingCandidate.generalJobTitle,
                   currentCompany: candidateData.currentCompany || existingCandidate.currentCompany,
@@ -655,18 +657,17 @@ const server = createServer(
                 console.log(`📡 Calling Resume API for file: ${randomFile}`);
                 
                 // Call the new Resume API endpoint
-                const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-single-cv', {
+                const formData = new FormData();
+                formData.append('file', new Blob([pdfBuffer], { type: 'application/pdf' }), randomFile);
+                formData.append('filename', randomFile);
+                
+                const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-cv', {
                   method: 'POST',
                   headers: {
-                    'Content-Type': 'application/json',
                     'User-Agent': 'LinkedIn-Microservice/1.0',
                     'Accept': 'application/json'
                   },
-                  body: JSON.stringify({
-                    file_id: `test_${Date.now()}`,
-                    pdf_base64: pdfBase64,
-                    filename: randomFile
-                  }),
+                  body: formData,
                   signal: AbortSignal.timeout(120000), // 2 minutes timeout
                   keepalive: true
                 });
@@ -679,23 +680,31 @@ const server = createServer(
                 console.log(`✅ Resume API parsed data successfully for: ${randomFile}`);
                 console.log(`📊 Resume API Response:`, JSON.stringify(parsedData, null, 2));
                 
+                // Validate API response structure
+                if (!parsedData.success && !parsedData.result && !parsedData.personal_info) {
+                  throw new Error(`Invalid API response structure: ${JSON.stringify(parsedData)}`);
+                }
+                
                 // Map the Resume API response to our expected format
+                // Handle both direct response and wrapped response formats
+                const responseData = parsedData.result || parsedData;
+                
                 processedCvData = {
-                  firstName: parsedData.result?.personal_info?.first_name || parsedData.result?.personal_info?.firstName || "Unknown",
-                  lastName: parsedData.result?.personal_info?.last_name || parsedData.result?.personal_info?.lastName || "Unknown",
-                  skills: Array.isArray(parsedData.result?.skills) ? parsedData.result.skills : [],
-                  education: Array.isArray(parsedData.result?.education) ? parsedData.result.education : [],
-                  workExperience: Array.isArray(parsedData.result?.work_experience) ? parsedData.result.workExperience : [],
-                  certifications: Array.isArray(parsedData.result?.certifications) ? parsedData.result.certifications : [],
-                  languages: Array.isArray(parsedData.result?.languages) ? parsedData.result.languages : [],
-                  verification: Array.isArray(parsedData.result?.verification) ? parsedData.result.verification : [],
-                  bio: parsedData.result?.summary || parsedData.result?.bio || "",
-                  generalJobTitle: parsedData.result?.personal_info?.job_title || parsedData.result?.personal_info?.generalJobTitle || "",
-                  currentCompany: parsedData.result?.personal_info?.current_company || parsedData.result?.personal_info?.currentCompany || "",
-                  workingLocation: parsedData.result?.personal_info?.location || parsedData.result?.personal_info?.workingLocation || "",
-                  category: parsedData.result?.category || null,
-                  dateOfBirth: parsedData.result?.personal_info?.date_of_birth || parsedData.result?.personal_info?.dateOfBirth || null,
-                  profileImageUrl: parsedData.result?.personal_info?.profile_image_url || parsedData.result?.personal_info?.profileImageUrl || null
+                  firstName: responseData?.personal_info?.first_name || responseData?.personal_info?.firstName || "Unknown",
+                  lastName: responseData?.personal_info?.last_name || responseData?.personal_info?.lastName || "Unknown",
+                  skills: Array.isArray(responseData?.skills) ? responseData.skills : [],
+                  education: Array.isArray(responseData?.education) ? responseData.education : [],
+                  workExperience: Array.isArray(responseData?.work_experience) ? responseData.workExperience : [],
+                  certifications: Array.isArray(responseData?.certifications) ? responseData.certifications : [],
+                  languages: Array.isArray(responseData?.languages) ? responseData.languages : [],
+                  verification: Array.isArray(responseData?.verification) ? responseData.verification : [],
+                  bio: responseData?.summary || responseData?.bio || "",
+                  generalJobTitle: responseData?.personal_info?.job_title || responseData?.personal_info?.generalJobTitle || "",
+                  currentCompany: responseData?.personal_info?.current_company || responseData?.personal_info?.currentCompany || "",
+                  workingLocation: responseData?.personal_info?.location || responseData?.personal_info?.workingLocation || "",
+                  category: responseData?.category || null,
+                  dateOfBirth: responseData?.personal_info?.date_of_birth || responseData?.personal_info?.dateOfBirth || null,
+                  profileImageUrl: responseData?.personal_info?.profile_image_url || responseData?.personal_info?.profileImageUrl || null
                 };
                 
                 console.log(`🔄 Mapped CV Data:`, JSON.stringify(processedCvData, null, 2));
@@ -718,18 +727,24 @@ const server = createServer(
             try {
               console.log(`📡 Calling Resume API for URL: ${pdfUrl}`);
               
-              const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-single-cv', {
+              // For URL-based processing, we need to fetch the PDF first
+              const pdfResponse = await fetch(pdfUrl);
+              if (!pdfResponse.ok) {
+                throw new Error(`Failed to fetch PDF from URL: ${pdfResponse.status} ${pdfResponse.statusText}`);
+              }
+              const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+              
+              const formData = new FormData();
+              formData.append('file', new Blob([pdfBuffer], { type: 'application/pdf' }), 'remote_file.pdf');
+              formData.append('filename', 'remote_file.pdf');
+              
+              const resumeApiResponse = await fetch('https://cvparser-production-450e.up.railway.app/parse-cv', {
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json',
                   'User-Agent': 'LinkedIn-Microservice/1.0',
                   'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                  file_id: `url_${Date.now()}`,
-                  pdf_url: pdfUrl,
-                  filename: 'remote_file.pdf'
-                }),
+                body: formData,
                 signal: AbortSignal.timeout(120000), // 2 minutes timeout
                 keepalive: true
               });
@@ -742,22 +757,25 @@ const server = createServer(
               console.log(`✅ Resume API parsed data successfully for URL: ${pdfUrl}`);
               
               // Map the Resume API response to our expected format
+              // Handle both direct response and wrapped response formats
+              const responseData = parsedData.result || parsedData;
+              
               processedCvData = {
-                firstName: parsedData.result?.personal_info?.first_name || parsedData.result?.personal_info?.firstName || "Unknown",
-                lastName: parsedData.result?.personal_info?.last_name || parsedData.result?.personal_info?.lastName || "Unknown",
-                skills: Array.isArray(parsedData.result?.skills) ? parsedData.result.skills : [],
-                education: Array.isArray(parsedData.result?.education) ? parsedData.result.education : [],
-                workExperience: Array.isArray(parsedData.result?.work_experience) ? parsedData.result.workExperience : [],
-                certifications: Array.isArray(parsedData.result?.certifications) ? parsedData.result.certifications : [],
-                languages: Array.isArray(parsedData.result?.languages) ? parsedData.result.languages : [],
-                verification: Array.isArray(parsedData.result?.verification) ? parsedData.result.verification : [],
-                bio: parsedData.result?.summary || parsedData.result?.bio || "",
-                generalJobTitle: parsedData.result?.personal_info?.job_title || parsedData.result?.personal_info?.generalJobTitle || "",
-                currentCompany: parsedData.result?.personal_info?.current_company || parsedData.result?.personal_info?.currentCompany || "",
-                workingLocation: parsedData.result?.personal_info?.location || parsedData.result?.personal_info?.workingLocation || "",
-                category: parsedData.result?.category || null,
-                dateOfBirth: parsedData.result?.personal_info?.date_of_birth || parsedData.result?.personal_info?.dateOfBirth || null,
-                profileImageUrl: parsedData.result?.personal_info?.profile_image_url || parsedData.result?.personal_info?.profileImageUrl || null
+                firstName: responseData?.personal_info?.first_name || responseData?.personal_info?.firstName || "Unknown",
+                lastName: responseData?.personal_info?.last_name || responseData?.personal_info?.lastName || "Unknown",
+                skills: Array.isArray(responseData?.skills) ? responseData.skills : [],
+                education: Array.isArray(responseData?.education) ? responseData.education : [],
+                workExperience: Array.isArray(responseData?.work_experience) ? responseData.workExperience : [],
+                certifications: Array.isArray(responseData?.certifications) ? responseData.certifications : [],
+                languages: Array.isArray(responseData?.languages) ? responseData.languages : [],
+                verification: Array.isArray(responseData?.verification) ? responseData.verification : [],
+                bio: responseData?.summary || responseData?.bio || "",
+                generalJobTitle: responseData?.personal_info?.job_title || responseData?.personal_info?.generalJobTitle || "",
+                currentCompany: responseData?.personal_info?.current_company || responseData?.personal_info?.currentCompany || "",
+                workingLocation: responseData?.personal_info?.location || responseData?.personal_info?.workingLocation || "",
+                category: responseData?.category || null,
+                dateOfBirth: responseData?.personal_info?.date_of_birth || responseData?.personal_info?.dateOfBirth || null,
+                profileImageUrl: responseData?.personal_info?.profile_image_url || responseData?.personal_info?.profileImageUrl || null
               };
               
             } catch (apiError: any) {
@@ -798,13 +816,14 @@ const server = createServer(
             return;
           }
 
-          // Update basic candidate fields with CV data
+          // Update basic candidate fields with CV data (EXCEPT name, surname, email)
           console.log(`🔄 [SERVICE] Updating basic candidate fields with CV data...`);
           const { updateCandidate } = await import("./lib/database");
           
           const updateResult = await updateCandidate(existingCandidate.id, {
-            firstName: processedCvData.firstName || existingCandidate.firstName,
-            lastName: processedCvData.lastName || existingCandidate.lastName,
+            // firstName: processedCvData.firstName || existingCandidate.firstName,        // ❌ DO NOT UPDATE
+            // lastName: processedCvData.lastName || existingCandidate.lastName,          // ❌ DO NOT UPDATE
+            // email: processedCvData.email || existingCandidate.email,                  // ❌ DO NOT UPDATE
             bio: processedCvData.bio || existingCandidate.bio,
             generalJobTitle: processedCvData.generalJobTitle || existingCandidate.generalJobTitle,
             currentCompany: processedCvData.currentCompany || existingCandidate.currentCompany,

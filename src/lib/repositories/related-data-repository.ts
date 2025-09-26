@@ -290,7 +290,7 @@ export class RelatedDataRepository {
 
         // Check if record already exists to prevent duplicates
         const existingRecord = await pool.query(
-          `SELECT id FROM candidate_work_experience 
+          `SELECT id FROM candidates_work_experience 
            WHERE candidate_id = $1 AND job_title = $2 AND company_name = $3 AND start_year = $4`,
           [candidateId, exp.jobTitle, exp.companyName, exp.startYear],
         );
@@ -298,7 +298,7 @@ export class RelatedDataRepository {
         if (existingRecord.rows.length > 0) {
           // Update existing record
           await pool.query(
-            `UPDATE candidate_work_experience 
+            `UPDATE candidates_work_experience 
              SET end_year = $1, description = $2, "order" = $3
              WHERE id = $4`,
             [
@@ -314,7 +314,7 @@ export class RelatedDataRepository {
         } else {
           // Insert new record
           await pool.query(
-            `INSERT INTO candidate_work_experience (
+            `INSERT INTO candidates_work_experience (
               candidate_id, job_title, company_name, start_year, end_year, description, "order"
             ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [

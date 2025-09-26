@@ -93,7 +93,7 @@ export const candidateVerification = pgTable("candidates_verification", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const candidateWorkExperience = pgTable("candidate_work_experience", {
+export const candidateWorkExperience = pgTable("candidates_work_experience", {
   id: uuid("id").primaryKey().defaultRandom(),
   candidateId: uuid("candidate_id")
     .notNull()
